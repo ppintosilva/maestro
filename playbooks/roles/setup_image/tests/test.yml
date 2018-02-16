@@ -11,7 +11,7 @@
   
   # Using an end-of-life distro for testing purposes as it's less likely to already exist in glance
   tasks:
-    - include_tasks: ../tasks/setup-image.yml
+    - include_tasks: ../tasks/main.yml
 
     - name: Check if named image exists
       os_image_facts:
