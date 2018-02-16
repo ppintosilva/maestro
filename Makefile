@@ -12,6 +12,10 @@ reset:=$(shell tput sgr0)
 all:
 	@echo "This just saved you from a terrible mistake!"
 
+# Destroy all servers - irreversible!!
+clean:
+	./clean.sh
+
 # Install stuff
 virtualenv: /usr/bin/python2
 	$(info $(blue)Making new virtualenv at ./ENV]$(reset))
@@ -30,16 +34,17 @@ install: virtualenv pipdependencies galaxydependencies
 	
 
 # Individual role sanity check
-SETUP_IMAGE_TESTFILE=playbooks/roles/setup_image/tests/test.yml
-CREATE_SERVER_TESTFILE=playbooks/roles/create_server/tests/test.yml
+tests:
+	ansible-playbook -i inventory/openstack.py playbooks/roles/setup_image/tests/test.yml
+	ansible-playbook -i inventory/openstack.py playbooks/roles/create_server/tests/test.yml
 
-tests: $(SETUP_IMAGE_TESTFILE) $(CREATE_SERVER_TESTFILE)
-	ansible-playbook -i inventory/openstack.py $(SETUP_IMAGE_TESTFILE)
-	ansible-playbook -i inventory/openstack.py $(CREATE_SERVER_TESTFILE)
+# Create image with default values (ubuntu 16.04)
+image:
+	ansible-playbook -i inventory/openstack playbooks/setup-image.yml
 
-# Destroy all servers - irreversible!!
-clean:
-	./clean.sh
+# Create server with default values (4 GB RAM, ubuntu 16.04)
+server:
+	ansible-playbook -i inventory/openstack.py playbooks/create-server.yml
 
 # A freak accident just occurred out of nowhere
 singularity:
