@@ -1,0 +1,29 @@
+---
+- name: Test instance boot and idempotency
+  hosts: localhost
+  gather_facts: no
+  
+  vars:
+    server: "_test_server_"
+    image: "cirros-0.3.5-x86_64-disk" #Or change to existing image
+    flavor: "cirros256"
+    sec_groups: default
+    timeout_instance_boot: 120
+    username: jsnow
+    pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub' | expanduser) }}"
+    ext_net: public
+    timeout_add_floating_ip: 60
+    delete: true
+  
+  tasks:
+    - name: Create cirros test server
+      include_tasks: ../tasks/create-server.yml
+
+    - name: Idempotency test - no changes should take place
+      include_tasks: ../tasks/create-server.yml
+
+    - name: Delete created instance
+      os_server:
+        name: "{{ server }}"
+        state: absent
+      when: delete

@@ -1,0 +1,47 @@
+---
+# Create server
+#
+
+- name: Check if a server with the same name exists
+  os_server_facts:
+    server: "{{ server }}"
+
+- name: Boot new instance
+  os_server:
+    name: "{{ server }}"
+    image: "{{ image }}"
+    flavor: "{{ flavor }}"
+    state: present
+    auto_ip: no  # We do this in the following task
+    wait: yes
+    security_groups: "{{ sec_groups }}"
+    timeout: "{{ timeout_instance_boot }}"
+    config_drive: true
+    userdata: |
+      #cloud-config
+      users:
+        - name: {{ username }}
+          sudo: ALL=(ALL) NOPASSWD:ALL
+          groups: users, admin
+          ssh-impot-id: None
+          lock_passwd: true
+          ssh-authorized-keys: {{ pubkey }}
+          
+      packages:
+        - ansible
+        - make
+
+      package_upgrade: true
+  when: (openstack_servers | length == 0)
+
+
+- name: Add floating ip to instance - reuse floating ip or create new one
+  os_floating_ip:
+    state: present
+    reuse: yes
+    server: "{{ server }}"
+    network: "{{ ext_net }}"
+    wait: true
+    timeout: "{{ timeout_add_floating_ip }}"
+  when:
+    (openstack_servers | length == 0)
