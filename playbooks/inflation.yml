@@ -1,0 +1,4 @@
+- hosts: all
+  roles:
+    - role: wait_for_ssh
+    - role: install_docker
