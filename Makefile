@@ -30,9 +30,12 @@ install: virtualenv pipdependencies galaxydependencies
 	
 
 # Individual role sanity check
-tests:
-	ansible-playbook -i inventory/openstack.py playbooks/roles/setup-image/tests/test.yml
-	ansible-playbook -i inventory/openstack.py playbooks/roles/create-server/tests/test.yml
+SETUP_IMAGE_TESTFILE=playbooks/roles/setup_image/tests/test.yml
+CREATE_SERVER_TESTFILE=playbooks/roles/create_server/tests/test.yml
+
+tests: $(SETUP_IMAGE_TESTFILE) $(CREATE_SERVER_TESTFILE)
+	ansible-playbook -i inventory/openstack.py $(SETUP_IMAGE_TESTFILE)
+	ansible-playbook -i inventory/openstack.py $(CREATE_SERVER_TESTFILE)
 
 # Destroy all servers - irreversible!!
 clean:
