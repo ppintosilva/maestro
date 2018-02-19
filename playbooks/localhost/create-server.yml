@@ -1,5 +1,9 @@
 ---
 - hosts: localhost
   gather_facts: no
+  vars_prompt:
+    - name: "server"
+      prompt: "Name of instance"
+      private: no
   roles:
       - create-server

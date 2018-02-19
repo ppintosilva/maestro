@@ -103,3 +103,6 @@ ENV/
 # Vagrant - devstack
 Vagrantfile
 .vagrant/
+
+# Ansible
+*.retry

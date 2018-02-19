@@ -17,10 +17,10 @@
   
   tasks:
     - name: Create cirros test server
-      include_tasks: ../tasks/create-server.yml
+      include_tasks: ../tasks/main.yml
 
     - name: Idempotency test - no changes should take place
-      include_tasks: ../tasks/create-server.yml
+      include_tasks: ../tasks/main.yml
 
     - name: Delete created instance
       os_server:
