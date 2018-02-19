@@ -1,0 +1,12 @@
+database:
+  sql:
+    1
+  neo4j-mongo:
+    1
+
+webserver:
+  1
+
+compute:
+  spark:
+    7
