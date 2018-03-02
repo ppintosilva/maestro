@@ -106,3 +106,7 @@ Vagrantfile
 
 # Ansible
 *.retry
+
+# Openstack
+.openrc
+.pytest_cache/
