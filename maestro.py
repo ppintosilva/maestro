@@ -12,43 +12,17 @@ import sys
 
 #sys.tracebacklimit = 0
 
-# ---
+########################################################################
+##
+########################################################################
+#                       Custom exceptions
+########################################################################
+##
+########################################################################
 
-@click.group(help = "This is sparta!")
-def orchestrify():
-    pass
-
-# ---
-
-
-# Config File Generation
-# ---
-
-# Inventory file max levels
-MAX_LEVELS = 5
-
-class TooManyLevelsError(ValueError):
-    '''Raise when config file has over MAX_LEVELS hierarchies of groups'''
-    def __init__(self, message, rootgroup, *args):
-        self.message = message # without this you may get DeprecationWarning
-        # Special attribute you desire with your Error,
-        # perhaps the value that caused the error?:
-        self.rootgroup = rootgroup
-        # allow users initialize misc. arguments as any other builtin Error
-        super(TooManyLevelsError, self).__init__(message, rootgroup, *args)
-
-
-class ParentGroupSumError(ValueError):
-    '''Raise when sum of servers of child group is not equal to number of servers in parent group'''
-    def __init__(self, message, parentgroup, *args):
-        self.message = message # without this you may get DeprecationWarning
-        # perhaps the value that caused the error?:
-        self.parentgroup = parentgroup
-        # allow users initialize misc. arguments as any other builtin Error
-        super(ParentGroupSumError, self).__init__(message, parentgroup, *args)
 
 class NonPositiveGroupError(ValueError):
-    '''Raise when '''
+    '''Raise when a non positive integer is passed as group size'''
     def __init__(self, message, group, *args):
         self.message = message # without this you may get DeprecationWarning
         # Special attribute you desire with your Error,
@@ -57,7 +31,15 @@ class NonPositiveGroupError(ValueError):
         # allow users initialize misc. arguments as any other builtin Error
         super(NonPositiveGroupError, self).__init__(message, group, *args)
 
-# ---
+
+########################################################################
+##
+########################################################################
+#                        Group class
+########################################################################
+##
+########################################################################
+
 
 class Group(object):
     """
@@ -85,7 +67,15 @@ class Group(object):
         else:
             return False
 
-# Read list of groups from dictionary object
+########################################################################
+##
+########################################################################
+#                        Read groups method
+########################################################################
+##
+########################################################################
+
+
 def read_groups(dic, groups = list(), parent = None):
 
     for name, value in dic.iteritems():
@@ -101,18 +91,26 @@ def read_groups(dic, groups = list(), parent = None):
 
         else:
             raise ValueError(
-                    "The value of each group should be either an integer or a "
-                    "new group. Leaf groups should be in the form: \"group_name: nservers\" ")
+                    "The value of each group should be either an integer or a new group. Leaf groups should be in the form: \"group_name: nservers\" ")
 
         groups.append(group)
 
     return groups, group
 
 
-# ---
+########################################################################
+##
+########################################################################
+#                        SINGLE CLI COMMAND
+########################################################################
+##
+########################################################################
 
-@orchestrify.command(
-    name = "genesis",
+# ---
+# ---
+# ---
+# ---
+@click.command(
     short_help="Lead a band to glory.")
 @click.option(
     '--config-file',
@@ -125,8 +123,11 @@ def read_groups(dic, groups = list(), parent = None):
     required = False,
     help = "Host group requirements - string",
     type = click.STRING)
-
-def create_inventory(config_file, config):
+# ---
+# ---
+# ---
+# ---
+def genesis(config_file, config):
     """
     Lead your band to glory!
 
@@ -150,8 +151,9 @@ def create_inventory(config_file, config):
     \b
         databases: 1
     \b
-        compute: 6
+        compute:
           spark: 4
+          other: 2
     \b
         webservers:
           shiny: 1
@@ -178,32 +180,42 @@ def create_inventory(config_file, config):
     the number of servers in its children groups doesn't
     sum up to correctly then the application will exit with error.
     """
+    print(config_file)
+    print(config)
     # Is there a better way?
     if not config_file and not config:
-        raise ValueError("A config file must be provided using one of "
-                         "the two available options: --config-filename | --config")
+        raise ValueError("A config file must be provided using one of the two available options: --config-filename | --config")
     elif config_file and config:
-        raise ValueError("Two configs were provided: --config-filename was used "
-                         "together with --config. Only one option should be used.")
+        raise ValueError("Two configs were provided: --config-filename was used together with --config. Only one option should be used.")
     elif config_file:
         contents = config_file
     else:
         contents = config
 
     # Yaml parse error is thrown for us if not formatted correctly
-    yaml_dict = yaml.safe_load(contents)    
+    yaml_dict = yaml.safe_load(contents)
 
     # Read and spit out inventory
     groups = read_groups(yaml_dict)[0]
 
-    i = 0
-    for group in groups:
-        print("Group {}: {}".format(i, str(group)))
-        i += 1
+    # i = 0
+    # for group in groups:
+    #     print("Group {}: {}".format(i, str(group)))
+    #     i += 1
 
-# ---
+    return groups
+
+
+########################################################################
+##
+########################################################################
+#                        MAIN
+########################################################################
+##
+########################################################################
+
 
 if __name__ == "__main__":
     if os.getuid() == 0:
-	sys.exit("Do not run this script as root.")
-    orchestrify()
+	    sys.exit("Do not run this script as root.")
+    genesis()
