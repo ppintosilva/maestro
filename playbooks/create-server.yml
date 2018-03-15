@@ -6,4 +6,4 @@
       prompt: "Name of instance"
       private: no
   roles:
-      - create-server
+      - create_server
