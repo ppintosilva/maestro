@@ -38,13 +38,13 @@ runner = CliRunner()
 ########################################################################
 
 @pytest.mark.skip(reason="Just a wrapper")
-def run_function(config_file = None, config = None):
+def run_function(groups_file = None, groups_text = None):
     return runner.invoke(
         maestro.genesis,
-        ["--config-file",
-        config_file,
-        "--config",
-        config],
+        ["--groups-file",
+        groups_file,
+        "--groups-text",
+        groups_text],
         catch_exceptions = False)
 
 
@@ -56,22 +56,27 @@ def run_function(config_file = None, config = None):
 ########################################################################
 
 def test_use_both_config_inputs():
-    with pytest.raises(ValueError) as e0a:
-        run_function(config_file = __file__,
-                     config = "ignore_this")
+    with pytest.raises(ValueError):
+        run_function(groups_file = __file__,
+                     groups_text = "ignore_this")
 
 
 def test_use_none_of_two_config_inputs():
-    with pytest.raises(ValueError) as e0b:
-        run_function(config_file = None,
-                     config = None)
+    with pytest.raises(ValueError):
+        run_function(groups_file = None,
+                     groups_text = None)
 
 
 def test_use_non_integer_as_group_count():
-    with pytest.raises(ValueError) as e0c:
-        run_function(config_file = None,
-                     config = "Dummy: a")
+    with pytest.raises(ValueError):
+        run_function(groups_file = None,
+                     groups_text = "Dummy: a")
 
+
+def test_use_non_positive_integer_as_group_count():
+    with pytest.raises(maestro.NonPositiveGroupError):
+        run_function(groups_file = None,
+                     groups_text = "Dummy: 0")
 
 # def test_valid_number_of_servers_in_child_groups():
 #     config = \
@@ -82,7 +87,9 @@ def test_use_non_integer_as_group_count():
 #       apache: 1
 #     """
 #
-#     groups = run_function(config = config)
+#     yaml_dict = yaml.safe_load(config)
+#
+#     groups = maestro.read_groups(yaml_dict)[0]
 #
 #     assert "webservers" in groups
 #     assert "shiny" in groups

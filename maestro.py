@@ -87,7 +87,10 @@ def read_groups(dic, groups = list(), parent = None):
             group.servers += childgroup.servers
 
         elif isinstance(value, int):
-            group.servers = value
+            if value > 0:
+                group.servers = value
+            else:
+                raise NonPositiveGroupError("Group {} must have size greater than 0".format(group.name), group)
 
         else:
             raise ValueError(
@@ -110,24 +113,43 @@ def read_groups(dic, groups = list(), parent = None):
 # ---
 # ---
 # ---
-@click.command(
-    short_help="Lead a band to glory.")
+
+# @click.option(
+#     '--interactive',
+#     'mode',
+#     flag_value = 'interactive',
+#     default = True,
+#     help = "Run in interactive mode (questions will be asked throughout the process)"
+# )
+# @click.option(
+#     '--automatic',
+#     'mode',
+#     flag_value = 'automatic',
+#     default = False,
+#     help = "Run in automatic mode (no questions will be asked and inputs should be provided through options)"
+# )
+@click.command()
 @click.option(
-    '--config-file',
-    required = False,
-    #default = "band.yml",
+    '--groups-file',
     help = "Host group requirements - file",
     type = click.File(mode = 'r'))
 @click.option(
-    '--config',
-    required = False,
+    '--groups-text',
     help = "Host group requirements - string",
+    type = click.STRING)
+@click.option(
+    '--roles-file',
+    help = "Roles to be run by each group - file",
+    type = click.File(mode = 'r'))
+@click.option(
+    '--roles-text',
+    help = "Roles to be run by each group - string",
     type = click.STRING)
 # ---
 # ---
 # ---
 # ---
-def genesis(config_file, config):
+def genesis(groups_file, groups_text, roles_file, roles_text):
     """
     Lead your band to glory!
 
@@ -180,17 +202,17 @@ def genesis(config_file, config):
     the number of servers in its children groups doesn't
     sum up to correctly then the application will exit with error.
     """
-    print(config_file)
-    print(config)
+    print(groups_file)
+    print(groups_text)
     # Is there a better way?
-    if not config_file and not config:
-        raise ValueError("A config file must be provided using one of the two available options: --config-filename | --config")
-    elif config_file and config:
-        raise ValueError("Two configs were provided: --config-filename was used together with --config. Only one option should be used.")
-    elif config_file:
-        contents = config_file
+    if not groups_file and not groups_text:
+        raise ValueError("Group requirements must be provided from a file or string, using one of the two available options: --groups-file | --groups_text")
+    elif groups_file and groups_text:
+        raise ValueError("Two group requirements were provided: --groups-file was used together with --groups-text. Only one option should be used.")
+    elif groups_file:
+        contents = groups_file
     else:
-        contents = config
+        contents = groups_text
 
     # Yaml parse error is thrown for us if not formatted correctly
     yaml_dict = yaml.safe_load(contents)
