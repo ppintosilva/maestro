@@ -122,13 +122,21 @@ def test_valid_number_of_servers_in_child_groups():
     assert not groups["shiny"].isRoot()
     assert not groups["nginx"].isRoot()
     assert not groups["apache"].isRoot()
+    assert not groups["webservers"].isLeaf()
+    assert groups["shiny"].isLeaf()
+    assert groups["nginx"].isLeaf()
+    assert groups["apache"].isLeaf()
     assert groups["shiny"].servers == 1
     assert groups["nginx"].servers == 1
     assert groups["apache"].servers == 1
-    assert groups["webservers"].servers == 3
+    assert groups["webservers"].servers == 0
+    assert len(groups["shiny"].children) == 0
+    assert len(groups["nginx"].children) == 0
+    assert len(groups["apache"].children) == 0
+    assert len(groups["webservers"].children) == 3
 
 
-def test_use_of_other_1_time():
+def test_use_of_other_simple():
     config = \
     """
     webservers:
@@ -143,11 +151,11 @@ def test_use_of_other_1_time():
 
     print groups
 
-    assert groups["webservers"].servers == 3
+    assert groups["webservers"].servers == 1
     assert groups["shiny"].servers == 1
     assert groups["nginx"].servers == 1
 
-def test_use_of_other_3_times():
+def test_use_of_other_complex():
     config = \
     """
     webservers:
@@ -159,8 +167,15 @@ def test_use_of_other_3_times():
       sql: 1
       other: 5
 
+    generic:
+        other: 5
+        windows:
+            xp: 5
+            seven: 5
+            other: 5
+
     computing:
-      other: 6
+      other: 7
     """
 
     yaml_dict = yaml.safe_load(config)
@@ -169,9 +184,12 @@ def test_use_of_other_3_times():
 
     print groups
 
-    assert groups["webservers"].servers == 4
-    assert groups["databases"].servers == 6
-    assert groups["computing"].servers == 6
+    assert groups["webservers"].servers == 2
+    assert groups["databases"].servers == 5
+    assert groups["computing"].servers == 7
+    assert groups["windows"].servers == 5
+    assert groups["generic"].servers == 5
+
 
 
 #

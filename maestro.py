@@ -44,24 +44,29 @@ class NonPositiveGroupError(ValueError):
 class Group(object):
     """
     Object representing a group of servers.
-    Root groups have no parent group.
+
+    Root groups have no parent group
+    (except for group 'all' in ansible).
     """
 
-    def __init__(self, name, servers, parent = None):
+    def __init__(self, name, servers, parent = None, children = list()):
         self.name = name
         self.servers = servers
         self.parent = parent
-        self.servers_names = ""
+        self.children = children
 
     def __str__(self):
-        return "name = {name}, servers = {servers}, parent = {parent}, isRoot = {isRoot}".format(
+        return "name = {name}, servers = {servers}, parent = {parent}, children = {children}".format(
                 name = self.name,
                 servers = self.servers,
                 parent = "None" if self.parent is None else self.parent.name,
-                isRoot = self.isRoot())
+                children = map(lambda x: x.name, self.children))
 
     def isRoot(self):
         return not bool(self.parent)
+
+    def isLeaf(self):
+        return len(self.children) == 0
 
 ########################################################################
 ##
@@ -71,44 +76,55 @@ class Group(object):
 ##
 ########################################################################
 
+"""
+Returns a dictionary in the form:
+    name , group
 
+This is useful when you need to run code that doesn't care about
+the tree-like structure of the groups.
+
+However, when you care about the structure of the groups,
+(for instance, when generating the inventory: groups are written to the
+file in a depth-first format) then only the list of root or leaf nodes
+is necessary. Then the tree is transversed in the most appropriate manner
+to the case: breadth-first, depth-first, top-to-bottom, bottom-to-top, etc.
+"""
 def read_groups(dic, groups = dict(), parent = None):
 
     for name, value in dic.iteritems():
 
-        group = Group(name, 0, parent)
+        group = Group(name, 0, parent, list())
 
+        # If I'm not a leaf group then read my child groups
         if isinstance(value, dict):
-            groups = read_groups(value, groups, parent = group)
-
             if name == "other":
                 raise ValueError("Groups named 'other' are not allowed.")
 
+            groups = read_groups(value, groups, parent = group)
+
+        # Else if I'm a leaf node
         elif isinstance(value, int):
+            # Read number of servers
             if value > 0:
                 group.servers = value
             else:
                 raise NonPositiveGroupError("Group {} must have size greater than 0".format(group.name), group)
 
-            if not group.isRoot():
-                # Populate parents recursively
-                father = group.parent
-                while True:
-                    father.servers += value
-                    if father.isRoot:
-                        break
-                    else:
-                        father = father.parent
-
+            # Wait.. I'm not really a group..
             if name == "other":
                 if group.isRoot():
                     raise ValueError("Groups named 'other' are not allowed.")
                 else:
+                    group.parent.servers += value
                     continue
 
         else:
             raise ValueError(
-                    "The value of each group should be either an integer or a new group. Leaf groups should be in the form: \"group_name: nservers\" ")
+                    "Each group should be either an integer or a new group. Leaf groups should be in the form: \"group_name: nservers\" ")
+
+        # Append me to my parent's children
+        if not group.isRoot():
+            group.parent.children.append(group)
 
         if name in groups:
             raise ValueError(
@@ -116,6 +132,34 @@ def read_groups(dic, groups = dict(), parent = None):
         groups[name] = group
 
     return groups
+
+
+"""
+Retrieves the list of roots from a dictionary of groups
+"""
+def get_roots(groups):
+    return [group if group.isRoot() else None for group in groups.values()]
+
+
+"""
+Retrieves the list of roots from a dictionary of groups
+"""
+def get_leafs(groups):
+    return [group if group.isLeaf() else None for group in groups.values()]
+
+
+"""
+Recursive wrapper for running arbitrary methods on a tree-like structure
+
+Depth first search:
+    - Code runs on parent and then immediately on children
+"""
+def on_each_group(roots, method, **kwargs):
+    for root in roots:
+        method(root, **kwargs)
+        on_each_group(root.children, method)
+
+#def gen_inventory(roots):
 
 
 ########################################################################
@@ -235,6 +279,8 @@ def genesis(groups_file, groups_text, roles_file, roles_text):
 
     # Read and spit out inventory
     groups = read_groups(yaml_dict)
+
+
 
     i = 0
     for group in groups.values():
