@@ -54,18 +54,14 @@ class Group(object):
         self.servers_names = ""
 
     def __str__(self):
-        if self.parent is None:
-            return "name = {}, servers = {}, parent = None".format(
-                self.name, self.servers)
-        else:
-            return "name = {}, servers = {}, parent = {}".format(
-                self.name, self.servers, self.parent.name)
+        return "name = {name}, servers = {servers}, parent = {parent}, isRoot = {isRoot}".format(
+                name = self.name,
+                servers = self.servers,
+                parent = "None" if self.parent is None else self.parent.name,
+                isRoot = self.isRoot())
 
     def isRoot(self):
-        if self.parent is None:
-            return True
-        else:
-            return False
+        return not bool(self.parent)
 
 ########################################################################
 ##
@@ -76,15 +72,17 @@ class Group(object):
 ########################################################################
 
 
-def read_groups(dic, groups = list(), parent = None):
+def read_groups(dic, groups = dict(), parent = None):
 
     for name, value in dic.iteritems():
-        #print("name: {}, value: {}".format(name, value))
+
         group = Group(name, 0, parent)
 
         if isinstance(value, dict):
-            groups, childgroup = read_groups(value, groups, parent = group)
-            group.servers += childgroup.servers
+            groups = read_groups(value, groups, parent = group)
+
+            if name == "other":
+                raise ValueError("Groups named 'other' are not allowed.")
 
         elif isinstance(value, int):
             if value > 0:
@@ -92,13 +90,32 @@ def read_groups(dic, groups = list(), parent = None):
             else:
                 raise NonPositiveGroupError("Group {} must have size greater than 0".format(group.name), group)
 
+            if not group.isRoot():
+                # Populate parents recursively
+                father = group.parent
+                while True:
+                    father.servers += value
+                    if father.isRoot:
+                        break
+                    else:
+                        father = father.parent
+
+            if name == "other":
+                if group.isRoot():
+                    raise ValueError("Groups named 'other' are not allowed.")
+                else:
+                    continue
+
         else:
             raise ValueError(
                     "The value of each group should be either an integer or a new group. Leaf groups should be in the form: \"group_name: nservers\" ")
 
-        groups.append(group)
+        if name in groups:
+            raise ValueError(
+                    "Group names should be unique.")
+        groups[name] = group
 
-    return groups, group
+    return groups
 
 
 ########################################################################
@@ -202,8 +219,7 @@ def genesis(groups_file, groups_text, roles_file, roles_text):
     the number of servers in its children groups doesn't
     sum up to correctly then the application will exit with error.
     """
-    print(groups_file)
-    print(groups_text)
+
     # Is there a better way?
     if not groups_file and not groups_text:
         raise ValueError("Group requirements must be provided from a file or string, using one of the two available options: --groups-file | --groups_text")
@@ -218,12 +234,12 @@ def genesis(groups_file, groups_text, roles_file, roles_text):
     yaml_dict = yaml.safe_load(contents)
 
     # Read and spit out inventory
-    groups = read_groups(yaml_dict)[0]
+    groups = read_groups(yaml_dict)
 
-    # i = 0
-    # for group in groups:
-    #     print("Group {}: {}".format(i, str(group)))
-    #     i += 1
+    i = 0
+    for group in groups.values():
+        print("Group {}: {}".format(i, str(group)))
+        i += 1
 
     return groups
 
