@@ -138,26 +138,55 @@ def read_groups(dic, groups = dict(), parent = None):
 Retrieves the list of roots from a dictionary of groups
 """
 def get_roots(groups):
-    return [group if group.isRoot() else None for group in groups.values()]
+    return [group for group in groups.values() if group.isRoot()]
 
 
 """
 Retrieves the list of roots from a dictionary of groups
 """
-def get_leafs(groups):
-    return [group if group.isLeaf() else None for group in groups.values()]
+def get_leaves(groups):
+    return [group for group in groups.values() if group.isLeaf()]
 
 
 """
-Recursive wrapper for running arbitrary methods on a tree-like structure
+Recursive wrappers for running arbitrary methods on every node in a tree-like structure (depth-first search):
 
-Depth first search:
-    - Code runs on parent and then immediately on children
+    for_each_group(starting_groups,
+                   method,
+                   **kwargs)
+
+    where:
+    - starting_groups = the groups where the method is first run (usually, roots or leaves)
+
+    - method
+
+    - **kwargs = further parameters to be passed to method
 """
-def on_each_group(roots, method, **kwargs):
-    for root in roots:
-        method(root, **kwargs)
-        on_each_group(root.children, method)
+def for_each_group_below(groups,
+                         method,
+                         **kwargs):
+    for group in groups:
+        # Run method
+        method(group, **kwargs)
+        # Propagate to children
+        for_each_group_below(
+            group.children,
+            method,
+            **kwargs)
+
+
+def for_each_group_above(groups,
+                         method,
+                         **kwargs):
+    for group in groups:
+        # Run method
+        method(group, **kwargs)
+        # Propagate to parents
+        if not group.isRoot():
+            for_each_group_above(
+                [group.parent],
+                method,
+                **kwargs)
 
 #def gen_inventory(roots):
 
@@ -279,7 +308,6 @@ def genesis(groups_file, groups_text, roles_file, roles_text):
 
     # Read and spit out inventory
     groups = read_groups(yaml_dict)
-
 
 
     i = 0

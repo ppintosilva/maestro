@@ -155,8 +155,11 @@ def test_use_of_other_simple():
     assert groups["shiny"].servers == 1
     assert groups["nginx"].servers == 1
 
-def test_use_of_other_complex():
-    config = \
+#---
+#---
+#---
+
+config_complex = \
     """
     webservers:
       shiny: 1
@@ -178,11 +181,11 @@ def test_use_of_other_complex():
       other: 7
     """
 
-    yaml_dict = yaml.safe_load(config)
+def test_use_of_other_complex():
+
+    yaml_dict = yaml.safe_load(config_complex)
 
     groups = maestro.read_groups(yaml_dict, dict(), None)
-
-    print groups
 
     assert groups["webservers"].servers == 2
     assert groups["databases"].servers == 5
@@ -191,6 +194,95 @@ def test_use_of_other_complex():
     assert groups["generic"].servers == 5
 
 
+def test_for_each_group_above():
+    # Order of elements is not kept
+    yaml_dict = yaml.safe_load(config_complex)
+    groups = maestro.read_groups(yaml_dict, dict(), None)
+
+    roots = maestro.get_roots(groups)
+
+    assert len(roots) == 4
+
+    # Need to sort alphabetically
+    roots.sort(key = lambda x: x.name)
+
+    # As the order of elements when yaml.safe_load is called
+    # is not kept, we can't do this
+    # expected_names = ["computing",
+    #                   "databases",
+    #                   "sql",
+    #                   "generic",
+    #                   "windows",
+    #                   "xp",
+    #                   "seven",
+    #                   "webservers",
+    #                   "shiny",
+    #                   "nginx"]
+    expected_names = [
+        "computing",
+        "databases",
+        "databases",
+        "generic",
+        "generic",
+        "windows",
+        "windows",
+        "webservers",
+        "webservers",
+        "webservers"]
+
+    names = []
+
+    maestro.for_each_group_below(
+        groups = roots,
+        method = lambda x:
+            names.append(x.name)
+            if x.isRoot()
+            else
+            names.append(x.parent.name))
+
+    assert expected_names == names
+
+
+def test_for_each_group_below():
+    # Order of elements is not kept
+    yaml_dict = yaml.safe_load(config_complex)
+    groups = maestro.read_groups(yaml_dict, dict(), None)
+
+    leaves = maestro.get_leaves(groups)
+
+    assert len(leaves) == 6
+
+    # Need to sort alphabetically
+    leaves.sort(key = lambda x: x.name)
+
+    # In this case, parents with multiple leaves will execute once once per each children. This is not a bug, but intended. The objective of the function is not to execute once and only once on each node, but for a given node, execute upwards or downwards (at least for now).
+
+    expected_names = [
+        "computing", # computing leaf
+        "webservers", # nginx leaf
+        "webservers", # webserver
+        "windows", # seven leaf
+        "generic", # windows
+        "generic", # generic
+        "webservers", # shiny leaf
+        "webservers", # webservers
+        "databases", # sql leaf
+        "databases", # databases
+        "windows", # xp leaf
+        "generic", # windows
+        "generic"] # generic
+
+    names = []
+
+    maestro.for_each_group_above(
+        groups = leaves,
+        method = lambda x:
+            names.append(x.name)
+            if x.isRoot()
+            else
+            names.append(x.parent.name))
+
+    assert expected_names == names
 
 #
 # # Case fails 2:
