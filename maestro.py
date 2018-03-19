@@ -71,6 +71,68 @@ class Group(object):
 ########################################################################
 ##
 ########################################################################
+#                        Group structure helpers
+########################################################################
+##
+########################################################################
+
+"""
+Retrieves the list of roots from a dictionary of groups
+"""
+def get_roots(groups):
+    return [group for group in groups.values() if group.isRoot()]
+
+
+"""
+Retrieves the list of roots from a dictionary of groups
+"""
+def get_leaves(groups):
+    return [group for group in groups.values() if group.isLeaf()]
+
+
+"""
+Recursive wrappers for running arbitrary methods on every node in a tree-like structure (depth-first search):
+
+    for_each_group(starting_groups,
+                   method,
+                   **kwargs)
+
+    where:
+    - starting_groups = the groups where the method is first run (usually, roots or leaves)
+
+    - method
+
+    - **kwargs = further parameters to be passed to method
+"""
+def for_each_group_below(groups,
+                         method,
+                         **kwargs):
+    for group in groups:
+        # Run method
+        method(group, **kwargs)
+        # Propagate to children
+        for_each_group_below(
+            group.children,
+            method,
+            **kwargs)
+
+
+def for_each_group_above(groups,
+                         method,
+                         **kwargs):
+    for group in groups:
+        # Run method
+        method(group, **kwargs)
+        # Propagate to parents
+        if not group.isRoot():
+            for_each_group_above(
+                [group.parent],
+                method,
+                **kwargs)
+
+########################################################################
+##
+########################################################################
 #                        Read groups method
 ########################################################################
 ##
@@ -134,62 +196,50 @@ def read_groups(dic, groups = dict(), parent = None):
     return groups
 
 
-"""
-Retrieves the list of roots from a dictionary of groups
-"""
-def get_roots(groups):
-    return [group for group in groups.values() if group.isRoot()]
+########################################################################
+##
+########################################################################
+#               Generate inventory in INI style from roots
+########################################################################
+##
+########################################################################
 
+def get_server_name(group, i):
+    name = group.name if group.isRoot() else "{}-{}".format(group.parent.name, group.name)
+    return "{}-{:03d}".format(name, i)
 
-"""
-Retrieves the list of roots from a dictionary of groups
-"""
-def get_leaves(groups):
-    return [group for group in groups.values() if group.isLeaf()]
+def get_servers_inventory(group):
+    servers = []
 
+    for i in xrange(0, group.servers, 1):
+        servers.append("[{}]".format(get_server_name(group, i+1)))
 
-"""
-Recursive wrappers for running arbitrary methods on every node in a tree-like structure (depth-first search):
+    return servers
 
-    for_each_group(starting_groups,
-                   method,
-                   **kwargs)
+def get_group_inventory(group):
+    group_inventory = ["[{}.children]".format(group.name)]
 
-    where:
-    - starting_groups = the groups where the method is first run (usually, roots or leaves)
+    for i in xrange(0, group.servers, 1):
+        group_inventory.append(get_server_name(group, i+1))
 
-    - method
+    return group_inventory
 
-    - **kwargs = further parameters to be passed to method
-"""
-def for_each_group_below(groups,
-                         method,
-                         **kwargs):
-    for group in groups:
-        # Run method
-        method(group, **kwargs)
-        # Propagate to children
-        for_each_group_below(
-            group.children,
-            method,
-            **kwargs)
+def gen_inventory(roots):
+    ini_inventory = []
 
+    for_each_group_below(
+        groups = roots,
+        method = lambda group:
+            ini_inventory.append("\n".join(get_servers_inventory(group)))
+    )
 
-def for_each_group_above(groups,
-                         method,
-                         **kwargs):
-    for group in groups:
-        # Run method
-        method(group, **kwargs)
-        # Propagate to parents
-        if not group.isRoot():
-            for_each_group_above(
-                [group.parent],
-                method,
-                **kwargs)
+    for_each_group_below(
+        groups = roots,
+        method = lambda group:
+            ini_inventory.append("\n".join(get_group_inventory(group)))
+    )
 
-#def gen_inventory(roots):
-
+    return "\n\n".join(ini_inventory)
 
 ########################################################################
 ##
@@ -199,25 +249,6 @@ def for_each_group_above(groups,
 ##
 ########################################################################
 
-# ---
-# ---
-# ---
-# ---
-
-# @click.option(
-#     '--interactive',
-#     'mode',
-#     flag_value = 'interactive',
-#     default = True,
-#     help = "Run in interactive mode (questions will be asked throughout the process)"
-# )
-# @click.option(
-#     '--automatic',
-#     'mode',
-#     flag_value = 'automatic',
-#     default = False,
-#     help = "Run in automatic mode (no questions will be asked and inputs should be provided through options)"
-# )
 @click.command()
 @click.option(
     '--groups-file',
@@ -235,8 +266,6 @@ def for_each_group_above(groups,
     '--roles-text',
     help = "Roles to be run by each group - string",
     type = click.STRING)
-# ---
-# ---
 # ---
 # ---
 def genesis(groups_file, groups_text, roles_file, roles_text):
@@ -309,11 +338,9 @@ def genesis(groups_file, groups_text, roles_file, roles_text):
     # Read and spit out inventory
     groups = read_groups(yaml_dict)
 
-
-    i = 0
-    for group in groups.values():
-        print("Group {}: {}".format(i, str(group)))
-        i += 1
+    with open('inventory/hosts', 'w') as inventory_file:
+        inventory = gen_inventory(get_roots(groups))
+        inventory_file.write(inventory)
 
     return groups
 

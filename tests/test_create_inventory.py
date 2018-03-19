@@ -149,8 +149,6 @@ def test_use_of_other_simple():
 
     groups = maestro.read_groups(yaml_dict, dict(), None)
 
-    print groups
-
     assert groups["webservers"].servers == 1
     assert groups["shiny"].servers == 1
     assert groups["nginx"].servers == 1
@@ -284,29 +282,116 @@ def test_for_each_group_below():
 
     assert expected_names == names
 
-#
-# # Case fails 2:
-# def test_create_inventory_fail_2():
-#     config = \
-#     """
-#     servers: 0
-#     """
-#     with pytest.raises(maestro.NonPositiveGroupError) as e2:
-#         maestro.create_inventory(config = config)
-#         assert e2.group == "servers"
-#
-#
-# # Case fails 3: No more than 5 levels of hierarchy allowed
-# def test_create_inventory_fail_3():
-#     config = \
-#     """
-#     openstack:
-#       dbs:
-#         notsql:
-#           mongo:
-#             child:
-#               fake: 1
-#     """
-#     with pytest.raises(maestro.TooManyLevelsError) as e3:
-#         maestro.create_inventory(config = config)
-#         assert e3.rootgroup == "openstack"
+
+def test_gen_inventory():
+    yaml_dict = yaml.safe_load(config_complex)
+    groups = maestro.read_groups(yaml_dict, dict(), None)
+
+    roots = maestro.get_roots(groups)
+
+    inventory = maestro.gen_inventory(roots)    
+
+    assert inventory  == \
+"""[generic-001]
+[generic-002]
+[generic-003]
+[generic-004]
+[generic-005]
+
+[generic-windows-001]
+[generic-windows-002]
+[generic-windows-003]
+[generic-windows-004]
+[generic-windows-005]
+
+[windows-xp-001]
+[windows-xp-002]
+[windows-xp-003]
+[windows-xp-004]
+[windows-xp-005]
+
+[windows-seven-001]
+[windows-seven-002]
+[windows-seven-003]
+[windows-seven-004]
+[windows-seven-005]
+
+[computing-001]
+[computing-002]
+[computing-003]
+[computing-004]
+[computing-005]
+[computing-006]
+[computing-007]
+
+[webservers-001]
+[webservers-002]
+
+[webservers-nginx-001]
+
+[webservers-shiny-001]
+
+[databases-001]
+[databases-002]
+[databases-003]
+[databases-004]
+[databases-005]
+
+[databases-sql-001]
+
+[generic.children]
+generic-001
+generic-002
+generic-003
+generic-004
+generic-005
+
+[windows.children]
+generic-windows-001
+generic-windows-002
+generic-windows-003
+generic-windows-004
+generic-windows-005
+
+[xp.children]
+windows-xp-001
+windows-xp-002
+windows-xp-003
+windows-xp-004
+windows-xp-005
+
+[seven.children]
+windows-seven-001
+windows-seven-002
+windows-seven-003
+windows-seven-004
+windows-seven-005
+
+[computing.children]
+computing-001
+computing-002
+computing-003
+computing-004
+computing-005
+computing-006
+computing-007
+
+[webservers.children]
+webservers-001
+webservers-002
+
+[nginx.children]
+webservers-nginx-001
+
+[shiny.children]
+webservers-shiny-001
+
+[databases.children]
+databases-001
+databases-002
+databases-003
+databases-004
+databases-005
+
+[sql.children]
+databases-sql-001"""
