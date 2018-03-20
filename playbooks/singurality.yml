@@ -1,4 +1,0 @@
-- hosts: localhost
-  roles:
-    - role: setup_image
-    - role: create_server
