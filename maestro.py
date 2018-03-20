@@ -130,6 +130,13 @@ def for_each_group_above(groups,
                 method,
                 **kwargs)
 
+def for_each_server(groups,
+                    method,
+                    **kwargs):
+    for i in xrange(0, group.servers, 1):
+        # Run method
+        method(group, **kwargs)
+
 ########################################################################
 ##
 ########################################################################
@@ -205,8 +212,13 @@ def read_groups(dic, groups = dict(), parent = None):
 ########################################################################
 
 def get_server_name(group, i):
-    name = group.name if group.isRoot() else "{}-{}".format(group.parent.name, group.name)
+    if group.isRoot():
+        name = group.name
+    else:
+        name = "{}-{}".format(group.parent.name, group.name)
+
     return "{}-{:03d}".format(name, i)
+
 
 def get_servers_inventory(group):
     servers = []
@@ -216,6 +228,7 @@ def get_servers_inventory(group):
 
     return servers
 
+
 def get_group_inventory(group):
     group_inventory = ["[{}.children]".format(group.name)]
 
@@ -223,6 +236,7 @@ def get_group_inventory(group):
         group_inventory.append(get_server_name(group, i+1))
 
     return group_inventory
+
 
 def gen_inventory(roots):
     ini_inventory = []
@@ -341,6 +355,19 @@ def genesis(groups_file, groups_text, roles_file, roles_text):
     with open('inventory/hosts', 'w') as inventory_file:
         inventory = gen_inventory(get_roots(groups))
         inventory_file.write(inventory)
+
+    # Read roles and vars if available
+
+
+    # Create playbooks/concerto.yaml
+
+    # Create playbooks/group/all.yaml
+
+    # For each group
+        # Create playbooks/group/group_name.yaml
+
+    # For each server
+        # Create playbooks/host/host_name.yaml
 
     return groups
 
