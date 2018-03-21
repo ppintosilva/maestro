@@ -54,6 +54,7 @@ class Group(object):
         self.servers = servers
         self.parent = parent
         self.children = children
+        self.roles = []
 
     def __str__(self):
         return "name = {name}, servers = {servers}, parent = {parent}, children = {children}".format(
@@ -67,6 +68,26 @@ class Group(object):
 
     def isLeaf(self):
         return len(self.children) == 0
+
+    def add_role(self, role_name, role_variables):
+        self.roles.append(Role(role_name, role_variables))
+
+
+class Role(object):
+    """
+    Object representing a role to be executed in a group of servers.
+    """
+
+    def __init__(self, name, variables):
+        self.name = name
+        # A n-length dictionary
+        self.variables = variables
+
+    def __str__(self):
+        return "name = {name}, variables = {variables}".format(
+                name = self.name,
+                variables = self.variables)
+
 
 ########################################################################
 ##
@@ -89,6 +110,11 @@ Retrieves the list of roots from a dictionary of groups
 def get_leaves(groups):
     return [group for group in groups.values() if group.isLeaf()]
 
+"""
+Retrieves the list of group names from a dictionary of groups
+"""
+def get_names(groups):
+    return [group.name for group in groups.values()]
 
 """
 Recursive wrappers for running arbitrary methods on every node in a tree-like structure (depth-first search):
@@ -258,6 +284,101 @@ def gen_inventory(roots):
 ########################################################################
 ##
 ########################################################################
+#                          Read Roles
+########################################################################
+##
+########################################################################
+
+def read_role(role):
+    # A role can be:
+        # A string (no variables)
+        # A dictionary
+        # A string (with no variables)
+
+    if isinstance(role, str):
+        role_name = role
+        raw_variables = None
+
+    elif isinstance(role, dict):
+        if len(role.keys()) != 1 or len(role.values()) != 1:
+            raise ValueError("This should not happen")
+
+        role_name = role.keys()[0]
+        raw_variables = role.values()[0]
+
+    else:
+        raise ValueError("Role '{}' is not defined as a string or a dictionary (as it should) but something else instead {}.".format(role_name, type(role)))
+
+    return (role_name, raw_variables)
+
+
+def read_variables(raw_variables):
+    # Variables can be:
+        # A n-List of 1-entry dictionaries
+        # A n-entry dictionary
+    if isinstance(raw_variables, list):
+        # Transform the n-list of 1 entry dictionaries to a n-entry dictionary
+        # Raise exception if every element in list is not a dictionary
+        variables = {}
+        for variable in raw_variables:
+            if not isinstance(variable, dict):
+                raise ValueError("Variable '{}' in role '{}' is not defined correctly. It should be defined as 'varname: value'.".format(variable, role_name))
+            variables.update(variable)
+
+    elif isinstance(raw_variables, dict):
+        """
+        Here, I won't be checking if the elements of variables are not dictionaries or lists. I guess it's up to the user to be sensible
+        at this point, unless the objective is to break the software.
+        """
+        variables = raw_variables
+
+    elif raw_variables is None:
+        variables = None
+
+    else:
+        raise ValueError("This should not happen. One or more variables are not well defined (expecting a dictionary, list of dictionaries or None)".format())
+
+    return variables
+
+
+def read_roles(dic, groups):
+
+    group_names = get_names(groups)
+
+    for group_name, roles in dic.iteritems():
+
+        if group_name not in group_names:
+            raise ValueError("Group named '{}' does not exist in groups: it was not provided in groups_file or groups_text.".format(group_name))
+
+        group = groups[group_name]
+
+        # List of roles
+        if isinstance(roles, list):
+
+            for role in roles:
+                role_name , raw_variables = read_role(role)
+                variables = read_variables(raw_variables)
+                group.add_role(role_name, variables)
+
+        # Dictionary of roles
+        elif isinstance(roles, dict):
+
+            for role_name, raw_variables in roles.iteritems():
+                variables = read_variables(raw_variables)
+                group.add_role(role_name, variables)
+
+        # Nothing - explicitely listing this conditional branch for workflow readability
+        elif roles is None:
+            pass
+
+        else:
+            raise ValueError("Group '{}' is not followed by a role or list of roles (dictionary, list of dictionaries or empty).".format(group_name))
+
+    return groups
+
+########################################################################
+##
+########################################################################
 #                        SINGLE CLI COMMAND
 ########################################################################
 ##
@@ -342,21 +463,34 @@ def genesis(groups_file, groups_text, roles_file, roles_text):
     elif groups_file and groups_text:
         raise ValueError("Two group requirements were provided: --groups-file was used together with --groups-text. Only one option should be used.")
     elif groups_file:
-        contents = groups_file
+        groups_contents = groups_file
     else:
-        contents = groups_text
+        groups_contents = groups_text
 
     # Yaml parse error is thrown for us if not formatted correctly
-    yaml_dict = yaml.safe_load(contents)
+    yaml_groups_dict = yaml.safe_load(groups_contents)
 
     # Read and spit out inventory
-    groups = read_groups(yaml_dict)
+    groups = read_groups(yaml_groups_dict)
 
     with open('inventory/hosts', 'w') as inventory_file:
         inventory = gen_inventory(get_roots(groups))
         inventory_file.write(inventory)
 
     # Read roles and vars if available
+    if roles_file and roles_text:
+        raise ValueError("Two roles/vars were provided: --roles-file was used together with --roles-text. Only one option should be used.")
+    elif roles_file:
+        roles_contents = roles_file
+    elif roles_text:
+        roles_contents = roles_text
+    else:
+        roles_contents = None
+
+    # Parse roles contents
+    if roles_contents:
+        yaml_roles_dict = yaml.safe_load(roles_contents)
+        roles = read_roles(yaml_roles_dict, groups)
 
 
     # Create playbooks/concerto.yaml
@@ -365,9 +499,13 @@ def genesis(groups_file, groups_text, roles_file, roles_text):
 
     # For each group
         # Create playbooks/group/group_name.yaml
+        # Create playbooks/group/vars/group_name.yaml
 
     # For each server
         # Create playbooks/host/host_name.yaml
+        # Create playbooks/host/vars/host_name.yaml
+
+
 
     return groups
 
