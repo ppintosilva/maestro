@@ -1,0 +1,14 @@
+all:
+
+webservers:
+  - docker
+
+databases:
+  - docker
+
+spark:
+  - spark
+
+computing:
+  - r-base
+  - r-devel
