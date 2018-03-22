@@ -35,7 +35,7 @@ class NonPositiveGroupError(ValueError):
 ########################################################################
 ##
 ########################################################################
-#                        Group class
+#                        Group and Role classes
 ########################################################################
 ##
 ########################################################################
@@ -228,6 +228,29 @@ def read_groups(dic, groups = dict(), parent = None):
 
     return groups
 
+########################################################################
+##
+########################################################################
+#               Generate concerto.yaml and all.yaml
+########################################################################
+##
+########################################################################
+
+def gen_concerto(groups):
+    pass
+    # concerto =
+    # """
+    # - hosts: localhost
+    #   gather_facts: no
+    #
+    #   roles:
+    #
+    # """
+    #
+    # for
+
+def gen_all(groups):
+    pass
 
 ########################################################################
 ##
@@ -385,25 +408,25 @@ def read_roles(dic, groups):
 ########################################################################
 
 @click.command()
-@click.option(
-    '--groups-file',
-    help = "Host group requirements - file",
+@click.argument(
+    'band',
+    nargs = 1,
     type = click.File(mode = 'r'))
 @click.option(
-    '--groups-text',
-    help = "Host group requirements - string",
-    type = click.STRING)
-@click.option(
-    '--roles-file',
-    help = "Roles to be run by each group - file",
+    '--instruments',
+    help = "Yaml file with roles to be executed by each group",
+    default = None,
     type = click.File(mode = 'r'))
 @click.option(
-    '--roles-text',
-    help = "Roles to be run by each group - string",
-    type = click.STRING)
+    '--provider',
+    type = click.Choice(['openstack']),
+    default = "openstack",
+    help = "Name of target cloud provider")
 # ---
 # ---
-def genesis(groups_file, groups_text, roles_file, roles_text):
+def genesis(groups,
+            roles,
+            provider):
     """
     Lead your band to glory!
 
@@ -417,58 +440,14 @@ def genesis(groups_file, groups_text, roles_file, roles_text):
     possible using openstack.py solely as an inventory
     file.
 
-    The configuration string, or file in yaml format,
-    should list the names of major groups and their
-    children. The number of servers in each group
-    must also be provided.
+    BAND should be a yaml file which lists the names
+    and number of servers of each group and their children.
 
-    \b
-    Consider the following configuration:
-    \b
-        databases: 1
-    \b
-        compute:
-          spark: 4
-          other: 2
-    \b
-        webservers:
-          shiny: 1
-          nginx: 1
-    \b
-    The result is as follows:
-    \b
-        Group     | Parent Group | Servers
-        -----      ------------   -------
-        databases     all             1
-        compute       all             6
-        spark         compute         4
-        webservers    all             2
-        shiny         webservers      1
-        nginx         webservers      1
-
-    The compute group has 6 servers, of which 4 are
-    part of subgroup spark and the other 2 have no subgroup.
-    If all instances of a parent group are also part of a
-    subgroup then the total doesn't have to be provided
-    (as in the case of webservers).
-
-    However, if the parent group total is provided and
-    the number of servers in its children groups doesn't
-    sum up to correctly then the application will exit with error.
+    More detail can be found in README.md.
     """
 
-    # Is there a better way?
-    if not groups_file and not groups_text:
-        raise ValueError("Group requirements must be provided from a file or string, using one of the two available options: --groups-file | --groups_text")
-    elif groups_file and groups_text:
-        raise ValueError("Two group requirements were provided: --groups-file was used together with --groups-text. Only one option should be used.")
-    elif groups_file:
-        groups_contents = groups_file
-    else:
-        groups_contents = groups_text
-
     # Yaml parse error is thrown for us if not formatted correctly
-    yaml_groups_dict = yaml.safe_load(groups_contents)
+    yaml_groups_dict = yaml.safe_load(band)
 
     # Read and spit out inventory
     groups = read_groups(yaml_groups_dict)
@@ -477,25 +456,18 @@ def genesis(groups_file, groups_text, roles_file, roles_text):
         inventory = gen_inventory(get_roots(groups))
         inventory_file.write(inventory)
 
-    # Read roles and vars if available
-    if roles_file and roles_text:
-        raise ValueError("Two roles/vars were provided: --roles-file was used together with --roles-text. Only one option should be used.")
-    elif roles_file:
-        roles_contents = roles_file
-    elif roles_text:
-        roles_contents = roles_text
-    else:
-        roles_contents = None
-
     # Parse roles contents
-    if roles_contents:
-        yaml_roles_dict = yaml.safe_load(roles_contents)
-        roles = read_roles(yaml_roles_dict, groups)
-
+    if instruments:
+        yaml_roles_dict = yaml.safe_load(instruments)
+        groups = read_roles(yaml_roles_dict, groups)
 
     # Create playbooks/concerto.yaml
+    with open('playbooks/concerto.yaml', 'w') as concerto_file:
+        concerto_file.write(gen_concerto(groups))
 
     # Create playbooks/group/all.yaml
+    with open('playbooks/all.yaml', 'w') as all_file:
+        all_file.write(gen_all(groups))
 
     # For each group
         # Create playbooks/group/group_name.yaml
@@ -505,7 +477,9 @@ def genesis(groups_file, groups_text, roles_file, roles_text):
         # Create playbooks/host/host_name.yaml
         # Create playbooks/host/vars/host_name.yaml
 
-
+    # PRINT
+    # Success! The following files were generated:
+    # Run ... to do this and do that
 
     return groups
 
