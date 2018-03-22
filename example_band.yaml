@@ -1,9 +1,0 @@
-databases:
-  sql: 1
-  neo4j-mongo: 1
-
-webservers: 2
-
-computing:
-  spark: 7
-  other: 1
