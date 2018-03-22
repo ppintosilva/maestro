@@ -430,7 +430,7 @@ def genesis(groups,
     """
     Lead your band to glory!
 
-    Transform a bare set of band requirements
+    Transform a bare set of requirements
     into a fully formed band ready to perform.
 
     This creates a static inventory file to be used
@@ -439,6 +439,10 @@ def genesis(groups,
     the fast-changing cloud environment. This is not
     possible using openstack.py solely as an inventory
     file.
+
+    This also creates playbooks for each group, populated
+    with the roles you specify in '--instruments'. This is
+    a nice feature that goes along very well with ansible.
 
     BAND should be a yaml file which lists the names
     and number of servers of each group and their children.
