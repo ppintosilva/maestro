@@ -4,4 +4,4 @@
   include_vars: "vars/{{ provider }}.yml"
 
 #
-- include: "{{ provider }}.yml"
+- include_tasks: "{{ provider }}.yml"

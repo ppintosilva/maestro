@@ -5,11 +5,14 @@
 image: "cloud-xenial64"
 flavor: "m1.medium"
 sec_groups: "default"
+keypair:
+volumes:
 
 # ---
 # Network details
 
-ext_net: "public"
+private_network:
+external_network: "public"
 
 # ---
 # User data
@@ -20,5 +23,7 @@ pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub' | expanduser) }}"
 # ---
 # Timeouts
 
+wait_for_instance: yes
 timeout_instance_boot: 600
 timeout_add_floating_ip: 120
+timeout_before_floating_ip:
