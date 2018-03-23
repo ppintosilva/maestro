@@ -110,3 +110,9 @@ Vagrantfile
 # Openstack
 .openrc
 .pytest_cache/
+
+# Generated files
+playbooks/group/vars/*.yml
+playbooks/concerto.yml
+playbooks/intermezzo.yml
+playbooks/group/*.yml
