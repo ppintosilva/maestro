@@ -1,0 +1,24 @@
+---
+# ---
+# Instance details
+
+image: "cloud-xenial64"
+flavor: "m1.medium"
+sec_groups: "default"
+
+# ---
+# Network details
+
+ext_net: "public"
+
+# ---
+# User data
+
+username: "jsnow"
+pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub' | expanduser) }}"
+
+# ---
+# Timeouts
+
+timeout_instance_boot: 600
+timeout_add_floating_ip: 120
