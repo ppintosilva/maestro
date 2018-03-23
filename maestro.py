@@ -391,27 +391,29 @@ def read_roles(dic, groups):
 
 @click.command()
 @click.argument(
-    'band',
+    'orchestra',
+    nargs = 1,
+    required = True,
+    type = click.File(mode = 'r'))
+@click.argument(
+    'instruments',
+    default = None,
+    required = False,
     nargs = 1,
     type = click.File(mode = 'r'))
 @click.option(
-    '--instruments',
-    help = "Yaml file with roles to be executed by each group",
-    default = None,
-    type = click.File(mode = 'r'))
-@click.option(
-    '--provider',
+    '--theatre',
     type = click.Choice(['openstack']),
     default = "openstack",
     help = "Name of target cloud provider")
 # ---
 # ---
-def genesis(band,
+def genesis(orchestra,
             instruments,
-            provider):
+            theatre):
     """
-    Transform a bare set of requirements into fully
-    formed bands of servers ready to perform for you.
+    Transform a bare set of requirements into an
+    orchestra of servers ready to perform for you.
 
     This is a complementary tool to ansible for cloud
     orchestration. It generates ansible scripts that
@@ -431,14 +433,17 @@ def genesis(band,
     optionally specified in '--instruments'. If no roles
     are provided,
 
-    BAND should be a yaml file which lists the names
+    ORCHESTRA is a yaml file which lists the names
     and number of servers of each group and their children.
+
+    INSTRUMENTS is a yaml file which lists the roles and
+    variables of each group of servers.
 
     More detail can be found in README.md.
     """
 
     # Yaml parse error is thrown for us if not formatted correctly
-    yaml_groups_dict = yaml.safe_load(band)
+    yaml_groups_dict = yaml.safe_load(orchestra)
 
     # Read and spit out inventory
     groups = read_groups(yaml_groups_dict)
@@ -464,13 +469,14 @@ def genesis(band,
     # For each group
         # Create playbooks/group/group_name.yaml
 
+
     # Create playbooks/intermezzo.yaml
-    # Waits for ssh and executes all group plays in playbooks/group
     with open('playbooks/intermezzo.yml', 'w') as intermezzo_file:
         intermezzo_file.write(gen_all_groups_playbook(groups))
 
     # Create playbooks/concerto.yaml
-    # Creates all instances
+    #   - Play 1: Creates all instances
+    #   - Play 2: Waits for ssh
     with open('playbooks/concerto.yml', 'w') as concerto_file:
         concerto_file.write(gen_concerto(groups))
 
