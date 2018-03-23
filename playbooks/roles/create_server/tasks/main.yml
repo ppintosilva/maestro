@@ -2,10 +2,6 @@
 # Create server
 #
 
-- name: Check if a server with the same name exists
-  os_server_facts:
-    server: "{{ server }}"
-
 - name: Boot new instance
   os_server:
     name: "{{ server }}"
@@ -32,7 +28,7 @@
         - make
 
       package_upgrade: true
-  when: (openstack_servers | length == 0)
+  when: server not in (openstack_servers | default([]) | map(attribute='name'))
 
 
 - name: Add floating ip to instance - reuse floating ip or create new one
@@ -43,5 +39,4 @@
     network: "{{ ext_net }}"
     wait: true
     timeout: "{{ timeout_add_floating_ip }}"
-  when:
-    (openstack_servers | length == 0)
+  when: server not in (openstack_servers | default([]) | map(attribute='name'))
