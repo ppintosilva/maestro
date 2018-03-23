@@ -116,3 +116,4 @@ playbooks/group/vars/*.yml
 playbooks/concerto.yml
 playbooks/intermezzo.yml
 playbooks/group/*.yml
+inventory/hosts
