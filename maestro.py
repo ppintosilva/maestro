@@ -72,7 +72,6 @@ class Group(object):
     def add_role(self, role_name, role_variables):
         self.roles.append(Role(role_name, role_variables))
 
-
 class Role(object):
     """
     Object representing a role to be executed in a group of servers.
@@ -80,13 +79,17 @@ class Role(object):
 
     def __init__(self, name, variables):
         self.name = name
-        # A n-length dictionary
         self.variables = variables
 
     def __str__(self):
         return "name = {name}, variables = {variables}".format(
                 name = self.name,
                 variables = self.variables)
+
+    def get_vars_filename(self, group):
+        return "playbooks/group/vars/{}_{}.yml".format(
+                    group.name,
+                    self.name)
 
 
 ########################################################################
@@ -249,7 +252,17 @@ def gen_concerto(groups):
     #
     # for
 
-def gen_all(groups):
+def gen_all_groups_playbook(groups):
+    intermezzo = []
+
+    for_each_group_below(
+        groups = get_roots(groups),
+        method = lambda x: intermezzo.append(
+            "- include: group/{}.yml".format(x.name)))
+
+    return "\n\n".join(intermezzo)
+
+def gen_group_play(group):
     pass
 
 ########################################################################
@@ -312,43 +325,9 @@ def gen_inventory(roots):
 ##
 ########################################################################
 
-def read_role(role):
-    # A role can be:
-        # A string (no variables)
-        # A dictionary
-        # A string (with no variables)
-
-    if isinstance(role, str):
-        role_name = role
-        raw_variables = None
-
-    elif isinstance(role, dict):
-        if len(role.keys()) != 1 or len(role.values()) != 1:
-            raise ValueError("This should not happen")
-
-        role_name = role.keys()[0]
-        raw_variables = role.values()[0]
-
-    else:
-        raise ValueError("Role '{}' is not defined as a string or a dictionary (as it should) but something else instead {}.".format(role_name, type(role)))
-
-    return (role_name, raw_variables)
-
-
 def read_variables(raw_variables):
-    # Variables can be:
-        # A n-List of 1-entry dictionaries
-        # A n-entry dictionary
-    if isinstance(raw_variables, list):
-        # Transform the n-list of 1 entry dictionaries to a n-entry dictionary
-        # Raise exception if every element in list is not a dictionary
-        variables = {}
-        for variable in raw_variables:
-            if not isinstance(variable, dict):
-                raise ValueError("Variable '{}' in role '{}' is not defined correctly. It should be defined as 'varname: value'.".format(variable, role_name))
-            variables.update(variable)
-
-    elif isinstance(raw_variables, dict):
+    # Either a dictionary or none
+    if isinstance(raw_variables, dict):
         """
         Here, I won't be checking if the elements of variables are not dictionaries or lists. I guess it's up to the user to be sensible
         at this point, unless the objective is to break the software.
@@ -359,7 +338,7 @@ def read_variables(raw_variables):
         variables = None
 
     else:
-        raise ValueError("This should not happen. One or more variables are not well defined (expecting a dictionary, list of dictionaries or None)".format())
+        raise ValueError("One or more variables are not well defined (expecting a dictionary or None)".format())
 
     return variables
 
@@ -369,33 +348,36 @@ def read_roles(dic, groups):
     group_names = get_names(groups)
 
     for group_name, roles in dic.iteritems():
+        group_name = group_name.lower()
 
-        if group_name not in group_names:
+        if group_name == "all":
+            roots = get_roots(groups)
+        elif group_name not in group_names:
             raise ValueError("Group named '{}' does not exist in groups: it was not provided in groups_file or groups_text.".format(group_name))
+        else:
+            group = groups[group_name]
 
-        group = groups[group_name]
+        # A single role as a string with no variables defined
+        if isinstance(roles, str):
+            group.add_role(role_name, None)
 
-        # List of roles
-        if isinstance(roles, list):
-
-            for role in roles:
-                role_name , raw_variables = read_role(role)
-                variables = read_variables(raw_variables)
-                group.add_role(role_name, variables)
-
-        # Dictionary of roles
+        # A dictionary of roles
         elif isinstance(roles, dict):
 
             for role_name, raw_variables in roles.iteritems():
                 variables = read_variables(raw_variables)
-                group.add_role(role_name, variables)
+                if group_name == "all":
+                    map(lambda x: x.add_role(role_name, variables),
+                        roots)
+                else:
+                    group.add_role(role_name, variables)
 
-        # Nothing - explicitely listing this conditional branch for workflow readability
+        # No roles
         elif roles is None:
             pass
 
         else:
-            raise ValueError("Group '{}' is not followed by a role or list of roles (dictionary, list of dictionaries or empty).".format(group_name))
+            raise ValueError("Group '{}' should be followed by nothing or a role (dictionary).".format(group_name))
 
     return groups
 
@@ -424,25 +406,30 @@ def read_roles(dic, groups):
     help = "Name of target cloud provider")
 # ---
 # ---
-def genesis(groups,
-            roles,
+def genesis(band,
+            instruments,
             provider):
     """
-    Lead your band to glory!
+    Transform a bare set of requirements into fully
+    formed bands of servers ready to perform for you.
 
-    Transform a bare set of requirements
-    into a fully formed band ready to perform.
+    This is a complementary tool to ansible for cloud
+    orchestration. It generates ansible scripts that
+    help you automate the deployment of servers and
+    software on the cloud.
 
-    This creates a static inventory file to be used
+    Specifically, this program creates:
+
+    (1) - a static inventory file to be used
     together with a dynamic inventory file. This allows
     you to run playbooks for groups of servers within
     the fast-changing cloud environment. This is not
-    possible using openstack.py solely as an inventory
-    file.
+    possible using a dynamic inventory file by itself,
+    like, for instance, 'openstack.py'.
 
-    This also creates playbooks for each group, populated
-    with the roles you specify in '--instruments'. This is
-    a nice feature that goes along very well with ansible.
+    (2) - playbooks for each group, populated with roles
+    optionally specified in '--instruments'. If no roles
+    are provided,
 
     BAND should be a yaml file which lists the names
     and number of servers of each group and their children.
@@ -465,21 +452,27 @@ def genesis(groups,
         yaml_roles_dict = yaml.safe_load(instruments)
         groups = read_roles(yaml_roles_dict, groups)
 
-    # Create playbooks/concerto.yaml
-    with open('playbooks/concerto.yaml', 'w') as concerto_file:
-        concerto_file.write(gen_concerto(groups))
-
-    # Create playbooks/group/all.yaml
-    with open('playbooks/all.yaml', 'w') as all_file:
-        all_file.write(gen_all(groups))
+    # Write group vars to playbooks/group/vars/group_ROLE
+    for group in groups.values():
+        for role in group.roles:
+            role_vars_filename = role.get_vars_filename(group)
+            with open(role_vars_filename, 'w') as role_vars_file:
+                yaml.safe_dump(role.variables,
+                               role_vars_file,
+                               default_flow_style=False)
 
     # For each group
         # Create playbooks/group/group_name.yaml
-        # Create playbooks/group/vars/group_name.yaml
 
-    # For each server
-        # Create playbooks/host/host_name.yaml
-        # Create playbooks/host/vars/host_name.yaml
+    # Create playbooks/intermezzo.yaml
+    # Waits for ssh and executes all group plays in playbooks/group
+    with open('playbooks/intermezzo.yml', 'w') as intermezzo_file:
+        intermezzo_file.write(gen_all_groups_playbook(groups))
+
+    # Create playbooks/concerto.yaml
+    # Creates all instances
+    with open('playbooks/concerto.yml', 'w') as concerto_file:
+        concerto_file.write(gen_concerto(groups))
 
     # PRINT
     # Success! The following files were generated:
