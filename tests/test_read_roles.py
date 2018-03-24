@@ -92,43 +92,75 @@ def test_bad_definition_of_role():
 
 ###
 
+def test_bad_definition_of_role_using_list_level_1():
+    config = \
+    """
+    webservers:
+    databases:
+    jerome:
+      - docker
+      - derp
+
+    """
+
+    yaml_dict = yaml.safe_load(config)
+
+    with pytest.raises(ValueError):
+        maestro.read_roles(yaml_dict, groups)
+
+###
+
+def test_bad_definition_of_role_using_list_level_2():
+    config = \
+    """
+    webservers:
+    databases:
+    jerome:
+      docker:
+        - var1: "a"
+        - var2: "b"
+
+    """
+
+    yaml_dict = yaml.safe_load(config)
+
+    with pytest.raises(ValueError):
+        maestro.read_roles(yaml_dict, groups)
+
+###
+
 def test_list_of_roles():
     config = \
     """
     webservers:
     databases:
-        - docker:
-            - var1: 1
-            - var2: "2"
-        - mysql:
-            var1: "A"
-            var2: "B"
-        - mongo
+      docker:
+        var1: 1
+        var2: "2"
+      mysql:
+        var1: "A"
+        var2: "B"
+      mongo:
 
     windows:
-        docker:
-            - var1: 1
-            - var2: "2"
-        office:
-            var1: "A"
-            var2: "B"
-        samba:
+      docker:
+        var1: 1
+        var2: "2"
+      office:
+        var1: "A"
+        var2: "B"
+      samba:
 
     computing:
-        - spark
-        - sperk
-        - spirk
-        - spork
-        - spurk
+      spark:
+      sperk:
+      spirk:
+      spork:
+      spurk:
     """
 
     yaml_dict = yaml.safe_load(config)
     boosted_groups = maestro.read_roles(yaml_dict, groups)
-
-    # for k,v in boosted_groups.iteritems():
-    #     print(k)
-    #     for role in v.roles:
-    #         print(role)
 
     assert len(boosted_groups["generic"].roles) == 0
     assert len(boosted_groups["webservers"].roles) == 0
@@ -137,18 +169,25 @@ def test_list_of_roles():
     assert len(boosted_groups["computing"].roles) == 5
 
     assert (
-        map(lambda x: x.name, boosted_groups["computing"].roles)
+        sorted(map(lambda x: x.name, boosted_groups["computing"].roles))
         ==
         ["spark", "sperk", "spirk", "spork", "spurk"])
 
     assert (
-        map(lambda x: x.name, boosted_groups["databases"].roles)
+        sorted(map(lambda x: x.name, boosted_groups["databases"].roles))
         ==
-        ["docker", "mysql", "mongo"])
+        ["docker", "mongo", "mysql"])
 
     varnames = ['var1', 'var2']
 
-    assert boosted_groups["databases"].roles[0].variables.keys() == varnames
-    assert boosted_groups["databases"].roles[1].variables.keys() == varnames
-    assert boosted_groups["windows"].roles[0].variables.keys() == varnames
-    assert boosted_groups["windows"].roles[2].variables.keys() == varnames
+    assert boosted_groups["databases"].get_role("docker").variables.keys() == varnames
+
+    assert boosted_groups["databases"].get_role("mysql").variables.keys() == varnames
+
+    assert boosted_groups["databases"].get_role("mongo").variables ==  None
+
+    assert boosted_groups["windows"].get_role("docker").variables.keys() == varnames
+
+    assert boosted_groups["windows"].get_role("office").variables.keys() == varnames
+
+    assert boosted_groups["windows"].get_role("samba").variables ==  None

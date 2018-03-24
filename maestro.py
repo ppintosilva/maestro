@@ -72,6 +72,11 @@ class Group(object):
     def add_role(self, role_name, role_variables):
         self.roles.append(Role(role_name, role_variables))
 
+    def get_role(self, role_name):
+        for role in self.roles:
+            if role.name == role_name:
+                return role
+
 class Role(object):
     """
     Object representing a role to be executed in a group of servers.
