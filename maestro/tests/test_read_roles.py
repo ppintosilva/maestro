@@ -2,19 +2,7 @@ import os
 import sys
 import yaml
 import pytest
-
-# I don't like this but...
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
-import maestro
-
-
-########################################################################
-##
-########################################################################
-#                        TESTS ########################################################################
-##
-########################################################################
+from maestro.input import read_roles, read_groups
 
 groups = \
     """
@@ -38,7 +26,7 @@ groups = \
       other: 7
     """
 
-groups = maestro.read_groups(yaml.safe_load(groups), dict(), None)
+groups = read_groups(yaml.safe_load(groups), dict(), None)
 
 ###
 
@@ -53,7 +41,7 @@ def test_non_existing_group_name():
     yaml_dict = yaml.safe_load(config)
 
     with pytest.raises(ValueError):
-        maestro.read_roles(yaml_dict, groups)
+        read_roles(yaml_dict, groups)
 
 ###
 
@@ -72,7 +60,7 @@ def test_bad_definition_of_role_variables():
     yaml_dict = yaml.safe_load(config)
 
     with pytest.raises(ValueError):
-        maestro.read_roles(yaml_dict, groups)
+        read_roles(yaml_dict, groups)
 
 ###
 
@@ -88,7 +76,7 @@ def test_bad_definition_of_role():
     yaml_dict = yaml.safe_load(config)
 
     with pytest.raises(ValueError):
-        maestro.read_roles(yaml_dict, groups)
+        read_roles(yaml_dict, groups)
 
 ###
 
@@ -106,7 +94,7 @@ def test_bad_definition_of_role_using_list_level_1():
     yaml_dict = yaml.safe_load(config)
 
     with pytest.raises(ValueError):
-        maestro.read_roles(yaml_dict, groups)
+        read_roles(yaml_dict, groups)
 
 ###
 
@@ -125,7 +113,7 @@ def test_bad_definition_of_role_using_list_level_2():
     yaml_dict = yaml.safe_load(config)
 
     with pytest.raises(ValueError):
-        maestro.read_roles(yaml_dict, groups)
+        read_roles(yaml_dict, groups)
 
 ###
 
@@ -160,7 +148,7 @@ def test_list_of_roles():
     """
 
     yaml_dict = yaml.safe_load(config)
-    boosted_groups = maestro.read_roles(yaml_dict, groups)
+    boosted_groups = read_roles(yaml_dict, groups)
 
     assert len(boosted_groups["generic"].roles) == 0
     assert len(boosted_groups["webservers"].roles) == 0
@@ -191,3 +179,7 @@ def test_list_of_roles():
     assert boosted_groups["windows"].get_role("office").variables.keys() == varnames
 
     assert boosted_groups["windows"].get_role("samba").variables ==  None
+
+
+def test_list_role_inheritance():
+    pass

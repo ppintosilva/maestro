@@ -2,19 +2,10 @@ import os
 import sys
 import yaml
 import pytest
+from maestro.input import read_groups
+from maestro.inventory import gen_inventory
+from maestro.group import get_roots, for_each_group_below, get_leaves, for_each_group_above
 
-# I don't like this but...
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
-import maestro
-
-
-########################################################################
-##
-########################################################################
-#                        TESTS ########################################################################
-##
-########################################################################
 
 config = \
     """
@@ -42,7 +33,7 @@ def test_use_of_other_complex():
 
     yaml_dict = yaml.safe_load(config)
 
-    groups = maestro.read_groups(yaml_dict, dict(), None)
+    groups = read_groups(yaml_dict, dict(), None)
 
     assert groups["webservers"].servers == 2
     assert groups["databases"].servers == 5
@@ -54,9 +45,9 @@ def test_use_of_other_complex():
 def test_for_each_group_above():
     # Order of elements is not kept
     yaml_dict = yaml.safe_load(config)
-    groups = maestro.read_groups(yaml_dict, dict(), None)
+    groups = read_groups(yaml_dict, dict(), None)
 
-    roots = maestro.get_roots(groups)
+    roots = get_roots(groups)
 
     assert len(roots) == 4
 
@@ -89,7 +80,7 @@ def test_for_each_group_above():
 
     names = []
 
-    maestro.for_each_group_below(
+    for_each_group_below(
         groups = roots,
         method = lambda x:
             names.append(x.name)
@@ -103,9 +94,9 @@ def test_for_each_group_above():
 def test_for_each_group_below():
     # Order of elements is not kept
     yaml_dict = yaml.safe_load(config)
-    groups = maestro.read_groups(yaml_dict, dict(), None)
+    groups = read_groups(yaml_dict, dict(), None)
 
-    leaves = maestro.get_leaves(groups)
+    leaves = get_leaves(groups)
 
     assert len(leaves) == 6
 
@@ -116,39 +107,100 @@ def test_for_each_group_below():
 
     expected_names = [
         "computing", # computing leaf
+        # ---
         "webservers", # nginx leaf
         "webservers", # webserver
+        # --
         "windows", # seven leaf
         "generic", # windows
         "generic", # generic
+        # ---
         "webservers", # shiny leaf
         "webservers", # webservers
+        # ---
         "databases", # sql leaf
         "databases", # databases
+        # ---
         "windows", # xp leaf
         "generic", # windows
         "generic"] # generic
 
-    names = []
+    names_0 = []
+    names_1 = []
+    names_2 = []
+    names_3 = []
+    names_4 = []
+    names_5 = []
 
-    maestro.for_each_group_above(
-        groups = leaves,
+    for_each_group_above(
+        group = leaves[0], # computing
         method = lambda x:
-            names.append(x.name)
+            names_0.append(x.name)
             if x.isRoot()
             else
-            names.append(x.parent.name))
+            names_0.append(x.parent.name))
 
-    assert expected_names == names
+    assert expected_names[0:1] == names_0
+
+    
+    for_each_group_above(
+        group = leaves[1], # nginx
+        method = lambda x:
+            names_1.append(x.name)
+            if x.isRoot()
+            else
+            names_1.append(x.parent.name))
+
+    assert expected_names[1:3] == names_1
+
+    for_each_group_above(
+        group = leaves[2], # seven
+        method = lambda x:
+            names_2.append(x.name)
+            if x.isRoot()
+            else
+            names_2.append(x.parent.name))
+
+    assert expected_names[3:6] == names_2
+
+    for_each_group_above(
+        group = leaves[3], # shiny
+        method = lambda x:
+            names_3.append(x.name)
+            if x.isRoot()
+            else
+            names_3.append(x.parent.name))
+
+    assert expected_names[6:8] == names_3
+
+    for_each_group_above(
+        group = leaves[4], # sql
+        method = lambda x:
+            names_4.append(x.name)
+            if x.isRoot()
+            else
+            names_4.append(x.parent.name))
+
+    assert expected_names[8:10] == names_4
+
+    for_each_group_above(
+        group = leaves[5], # xp
+        method = lambda x:
+            names_5.append(x.name)
+            if x.isRoot()
+            else
+            names_5.append(x.parent.name))
+
+    assert expected_names[10:13] == names_5
 
 
 def test_gen_inventory():
     yaml_dict = yaml.safe_load(config)
-    groups = maestro.read_groups(yaml_dict, dict(), None)
+    groups = read_groups(yaml_dict, dict(), None)
 
-    roots = maestro.get_roots(groups)
+    roots = get_roots(groups)
 
-    inventory = maestro.gen_inventory(roots)
+    inventory = gen_inventory(roots)
 
     assert inventory  == \
 """[generic-001]

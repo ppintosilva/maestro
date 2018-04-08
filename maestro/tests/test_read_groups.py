@@ -2,19 +2,7 @@ import os
 import sys
 import yaml
 import pytest
-
-# I don't like this but...
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
-import maestro
-
-
-########################################################################
-##
-########################################################################
-#                        TESTS ########################################################################
-##
-########################################################################
+from maestro.input import read_groups
 
 
 def test_duplicate_group_name():
@@ -32,7 +20,7 @@ def test_duplicate_group_name():
     yaml_dict = yaml.safe_load(config)
 
     with pytest.raises(ValueError):
-        groups = maestro.read_groups(yaml_dict, dict(), None)
+        groups = read_groups(yaml_dict, dict(), None)
 
 
 def test_valid_number_of_servers_in_child_groups():
@@ -46,7 +34,7 @@ def test_valid_number_of_servers_in_child_groups():
 
     yaml_dict = yaml.safe_load(config)
 
-    groups = maestro.read_groups(yaml_dict, dict(), None)
+    groups = read_groups(yaml_dict, dict(), None)
 
     assert "webservers" in groups
     assert "shiny" in groups
@@ -84,7 +72,7 @@ def test_use_of_other_simple():
 
     yaml_dict = yaml.safe_load(config)
 
-    groups = maestro.read_groups(yaml_dict, dict(), None)
+    groups = read_groups(yaml_dict, dict(), None)
 
     assert groups["webservers"].servers == 1
     assert groups["shiny"].servers == 1
@@ -116,7 +104,7 @@ def test_use_of_other_complex():
 
     yaml_dict = yaml.safe_load(config)
 
-    groups = maestro.read_groups(yaml_dict, dict(), None)
+    groups = read_groups(yaml_dict, dict(), None)
 
     assert groups["webservers"].servers == 2
     assert groups["databases"].servers == 5
