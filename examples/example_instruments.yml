@@ -1,14 +1,21 @@
 all:
+  create_server:
+    image: cirros
+    external_network: public
+    flavor: m1.nano
+  setup_image:
+    image: lala
 
 webservers:
-  - docker
+  docker:
+    ohoho: alal
 
 databases:
-  - docker
+  docker
 
 spark:
-  - spark
+  spark
 
 computing:
-  - r-base
-  - r-devel
+  r-base:
+  r-devel:
