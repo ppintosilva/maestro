@@ -11,12 +11,16 @@ Root groups have no parent group
 """
 
 class Group(object):
-    def __init__(self, name, servers, parent = None, children = list()):
+    def __init__(self, name, servers, parent = None):
         self.name = name
         self.servers = servers
         self.parent = parent
-        self.children = children
+        self.children = []
         self.roles = []
+
+        if not self.isRoot():
+            self.parent.children.append(self)
+
 
     def __str__(self):
         return "name = {name}, servers = {servers}, parent = {parent}, children = {children}".format(
@@ -33,7 +37,11 @@ class Group(object):
 
     def add_role(self, role_name, role_variables):
         # TODO - propagate role to children (all below) and merge variables
-        self.roles.append(Role(role_name, role_variables))
+        self.roles.append(
+            Role(
+                name = role_name,
+                group_name = self.name,
+                variables = role_variables))
 
     def get_role(self, role_name):
         for role in self.roles:
@@ -48,7 +56,7 @@ class Group(object):
         return False
 
     def get_server_name(self, i):
-        if self.isRoot():
+        if self.isRoot() or self.parent.name in self.name.split("-"):
             name = self.name
         else:
             name = "{}-{}".format(self.parent.name, self.name)
@@ -61,18 +69,20 @@ Objects of this class represent a role to be executed in a group of servers.
 class Role(object):
 
 
-    def __init__(self, name, variables):
+    def __init__(self, name, group_name, variables):
         self.name = name
+        self.group_name = group_name
         self.variables = variables
 
     def __str__(self):
-        return "name = {name}, variables = {variables}".format(
+        return "name = {name}, group_name = {group_name}, variables = {variables}".format(
                 name = self.name,
+                group_name = self.group_name,
                 variables = self.variables)
 
-    def get_vars_filename(self, group):
+    def get_vars_filename(self):
         return "playbooks/group/vars/{}_{}.yml".format(
-                    group.name,
+                    group_name,
                     self.name)
 
 #############################
@@ -96,6 +106,12 @@ Retrieves the list of roots from a dictionary of groups
 """
 def get_leaves(groups):
     return [group for group in groups.values() if group.isLeaf()]
+
+"""
+Retrieves the list of roots from a dictionary of groups
+"""
+def get_non_leaves(groups):
+    return [group for group in groups.values() if not group.isLeaf()]
 
 """
 Retrieves the list of group names from a dictionary of groups

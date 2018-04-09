@@ -74,9 +74,11 @@ def test_use_of_other_simple():
 
     groups = read_groups(yaml_dict, dict(), None)
 
-    assert groups["webservers"].servers == 1
+    assert groups["webservers"].servers == 0
+    assert groups["webservers-other"].servers == 1
     assert groups["shiny"].servers == 1
     assert groups["nginx"].servers == 1
+    assert len(groups["webservers"].children) == 3
 
 
 def test_use_of_other_complex():
@@ -106,8 +108,13 @@ def test_use_of_other_complex():
 
     groups = read_groups(yaml_dict, dict(), None)
 
-    assert groups["webservers"].servers == 2
-    assert groups["databases"].servers == 5
-    assert groups["computing"].servers == 7
-    assert groups["windows"].servers == 5
-    assert groups["generic"].servers == 5
+    assert groups["webservers"].servers == 0
+    assert groups["webservers-other"].servers == 2
+    assert groups["databases"].servers == 0
+    assert groups["databases-other"].servers == 5
+    assert groups["computing"].servers == 0
+    assert groups["computing-other"].servers == 7
+    assert groups["windows"].servers == 0
+    assert groups["windows-other"].servers == 5
+    assert groups["generic"].servers == 0
+    assert groups["generic-other"].servers == 5

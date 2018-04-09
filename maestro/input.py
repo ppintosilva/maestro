@@ -11,7 +11,7 @@ Returns a dictionary in the form:
     name , group
 
 This is useful when you need to run code that doesn't care about
-the tree-like structure of the groups.
+the tree-like structure of the groups (i.e. for all groups).
 
 However, when you care about the structure of the groups,
 (for instance, when generating the inventory: groups are written to the
@@ -23,12 +23,13 @@ def read_groups(dic, groups = dict(), parent = None):
 
     for name, value in dic.iteritems():
 
-        group = Group(name, 0, parent, list())
+        name = name.lower()
+        group = Group(name, 0, parent)
 
         # If I'm not a leaf group then read my child groups
         if isinstance(value, dict):
             if name == "other":
-                raise ValueError("Groups named 'other' are not allowed.")
+                raise ValueError("Non-leaf groups named 'other' are not allowed.")
 
             groups = read_groups(value, groups, parent = group)
 
@@ -38,44 +39,26 @@ def read_groups(dic, groups = dict(), parent = None):
             if value > 0:
                 group.servers = value
             else:
-                raise NonPositiveGroupError("Group {} must have size greater than 0".format(group.name), group)
+                raise ValueError("Group {} must have size greater than 0".format(group.name))
 
             # Wait.. I'm not really a group..
             if name == "other":
                 if group.isRoot():
-                    raise ValueError("Groups named 'other' are not allowed.")
+                    raise ValueError("Root groups named 'other' are not allowed.")
                 else:
-                    group.parent.servers += value
-                    continue
+                    # Deslike this, need to think about better solution..
+                    group.name = "{}-{}".format(parent.name, "other")
 
         else:
             raise ValueError(
                     "Each group should be either an integer or a new group. Leaf groups should be in the form: \"group_name: nservers\" ")
 
-        # Append me to my parent's children
-        if not group.isRoot():
-            group.parent.children.append(group)
-
-        if name in groups:
+        if group.name in groups:
             raise ValueError(
-                    "Group names should be unique.")
-        groups[name] = group
+                    "{}: Names of root groups and groups within each tree should be unique.".format(name))
+        groups[group.name] = group
 
     return groups
-
-
-
-"""
-Custom exception to raise when a non positive integer is passed as group size
-"""
-class NonPositiveGroupError(ValueError):
-    def __init__(self, message, group, *args):
-        self.message = message # without this you may get DeprecationWarning
-        # Special attribute you desire with your Error,
-        # perhaps the value that caused the error?:
-        self.group = group
-        # allow users initialize misc. arguments as any other builtin Error
-        super(NonPositiveGroupError, self).__init__(message, group, *args)
 
 
 """
