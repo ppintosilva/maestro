@@ -85,7 +85,7 @@ def genesis(orchestra,
     groups = read_groups(yaml_groups_dict)
 
     with open('inventory/hosts', 'w') as inventory_file:
-        inventory = gen_inventory(get_roots(groups))
+        inventory = gen_inventory(groups)
         inventory_file.write(inventory)
 
     # Parse roles contents
