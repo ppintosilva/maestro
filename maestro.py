@@ -15,7 +15,6 @@ import click
 import os
 import sys
 
-from maestro.group import get_roots
 from maestro.input import read_roles, read_groups
 from maestro.inventory import gen_inventory
 from maestro.playbooks import gen_all_groups_playbook, gen_concerto, gen_individual_playbooks, write_variables
@@ -35,7 +34,7 @@ from maestro.playbooks import gen_all_groups_playbook, gen_concerto, gen_individ
     nargs = 1,
     type = click.File(mode = 'r'))
 @click.option(
-    '--theatre',
+    '--stage',
     type = click.Choice(['openstack']),
     default = "openstack",
     help = "Name of target cloud provider")
@@ -72,7 +71,7 @@ def genesis(orchestra,
     INSTRUMENTS is a yaml file which lists the roles and
     variables of each group of servers.
 
-    THEATRE is the name of the cloud provider, one of:
+    STAGE is the name of the cloud provider, one of:
     {'openstack'}
 
     More details can be found in README.md.
