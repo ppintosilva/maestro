@@ -21,6 +21,17 @@ class Group(object):
         if not self.isRoot():
             self.parent.children.append(self)
 
+        # Distasteful addition for now..
+        self.level = 0
+        group = self
+        while True:
+            if group.isRoot():
+                break
+            else:
+                self.level += 1
+                group = group.parent
+
+
 
     def __str__(self):
         return "name = {name}, servers = {servers}, parent = {parent}, children = {children}".format(
@@ -35,13 +46,28 @@ class Group(object):
     def isLeaf(self):
         return len(self.children) == 0
 
-    def add_role(self, role_name, role_variables):
-        # TODO - propagate role to children (all below) and merge variables
-        self.roles.append(
+    def add_role(self, role_name, role_variables, priority = None):
+        if priority is None:
+            priority = self.level
+
+        role = self.get_role(role_name)
+        if role is not None:
+            # Bit itchy but will do for now..
+            if priority >= role.priority:
+                role.priority = priority
+                role.variables = merge_variables(role.variables, role_variables)
+            else:
+                role.variables = merge_variables(role_variables, role.variables)
+        else:
+            self.roles.append(
             Role(
                 name = role_name,
-                group_name = self.name,
-                variables = role_variables))
+                variables = role_variables,
+                priority = priority))
+        # Propagate to children
+        for child in self.children:
+            child.add_role(role_name, role_variables, priority)
+
 
     def get_role(self, role_name):
         for role in self.roles:
@@ -63,27 +89,29 @@ class Group(object):
 
         return "{}-{:03d}".format(name, i)
 
+    def get_vars_filename(self, role_name):
+        if self.has_role(role_name):
+            return "playbooks/group/vars/{}_{}.yml".format(
+                        self.name,
+                        self.role_name)
+        return None
+
 """
 Objects of this class represent a role to be executed in a group of servers.
 """
 class Role(object):
 
 
-    def __init__(self, name, group_name, variables):
+    def __init__(self, name, variables, priority):
         self.name = name
-        self.group_name = group_name
         self.variables = variables
+        self.priority = priority
 
     def __str__(self):
         return "name = {name}, group_name = {group_name}, variables = {variables}".format(
                 name = self.name,
                 group_name = self.group_name,
                 variables = self.variables)
-
-    def get_vars_filename(self):
-        return "playbooks/group/vars/{}_{}.yml".format(
-                    group_name,
-                    self.name)
 
 #############################
 ##
@@ -142,15 +170,15 @@ Recursive wrappers for running arbitrary methods on every node in a tree-like st
 
     - **kwargs = further parameters to be passed to method
 """
-def for_each_group_below(groups,
+def for_each_group_below(group,
                          method,
                          **kwargs):
-    for group in groups:
-        # Run method
-        method(group, **kwargs)
+    # Run method
+    method(group, **kwargs)
+    for child in group.children:
         # Propagate to children
         for_each_group_below(
-            group.children,
+            child,
             method,
             **kwargs)
 
@@ -166,3 +194,8 @@ def for_each_group_above(group,
             group.parent,
             method,
             **kwargs)
+
+def merge_variables(no_precedence, precedence):
+    result = no_precedence.copy()   # start with x's keys and values
+    result.update(precedence)    # modifies z with y's keys and values & returns None
+    return result
