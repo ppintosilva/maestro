@@ -73,6 +73,9 @@ def read_roles(dic, groups):
 
         if group_name == "all":
             roots = get_roots(groups)
+            # TODO ....
+            #
+            
         elif group_name not in group_names:
             raise ValueError("Group named '{}' does not exist in groups: it was not provided in groups_file or groups_text.".format(group_name))
         else:
@@ -98,7 +101,7 @@ def read_roles(dic, groups):
             pass
 
         else:
-            raise ValueError("Group '{}' should be followed by nothing or a role (dictionary).".format(group_name))
+            raise ValueError("Group '{}' should be followed by a role (string, dictionary).".format(group_name))
 
     return groups
 
