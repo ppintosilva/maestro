@@ -29,7 +29,6 @@ def get_parent_children(group):
     inventory = ["[{}.children]".format(group.name)]
 
     for child in group.children:
-        print(child.name)
         inventory.append(child.name)
 
     return inventory
