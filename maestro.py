@@ -17,7 +17,7 @@ import sys
 
 from maestro.input import read_roles, read_groups
 from maestro.inventory import gen_inventory
-from maestro.playbooks import gen_all_groups_playbook, gen_concerto, gen_individual_playbooks, write_variables
+from maestro.playbooks import gen_all_groups_playbook, gen_concerto, gen_individual_playbook, write_variables
 
 #sys.tracebacklimit = 0
 
@@ -42,7 +42,7 @@ from maestro.playbooks import gen_all_groups_playbook, gen_concerto, gen_individ
 # ---
 def genesis(orchestra,
             instruments,
-            theatre):
+            stage):
     """
     Transform a bare set of requirements into an
     orchestra of servers ready to perform for you.
@@ -96,8 +96,12 @@ def genesis(orchestra,
         # Write group vars to playbooks/group/vars/group_ROLE
         # Create playbooks/group/group_name.yaml
     for group in groups.values():
+        # It's alright to generate variables for parent groups even though these are not used directly
         write_variables(group)
-        gen_individual_playbooks(group)
+        # Non-leaf groups import playbooks of children
+        with open('playbooks/group/{}.yml'.format(group.name), 'w') as playbook_file:
+            playbook = gen_individual_playbook(group)
+            playbook_file.write(playbook)
 
     # Create playbooks/intermezzo.yaml
     with open('playbooks/intermezzo.yml', 'w') as intermezzo_file:
@@ -107,7 +111,7 @@ def genesis(orchestra,
     #   - Play 1: Creates all instances
     #   - Play 2: Waits for ssh
     with open('playbooks/concerto.yml', 'w') as concerto_file:
-        concerto_file.write(gen_concerto(groups, theatre))
+        concerto_file.write(gen_concerto(groups, stage))
 
     # PRINT
     # Success! The following files were generated:

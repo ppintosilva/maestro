@@ -52,12 +52,15 @@ class Group(object):
 
         role = self.get_role(role_name)
         if role is not None:
-            # Bit itchy but will do for now..
-            if priority >= role.priority:
-                role.priority = priority
-                role.variables = merge_variables(role.variables, role_variables)
-            else:
-                role.variables = merge_variables(role_variables, role.variables)
+            if role.variables is None:
+                role.variables = role_variables
+            elif role_variables is not None:
+                # Bit itchy but will do for now..
+                if priority >= role.priority:
+                    role.priority = priority
+                    role.variables = merge_variables(role.variables, role_variables)
+                else:
+                    role.variables = merge_variables(role_variables, role.variables)
         else:
             self.roles.append(
             Role(
@@ -93,7 +96,7 @@ class Group(object):
         if self.has_role(role_name):
             return "playbooks/group/vars/{}_{}.yml".format(
                         self.name,
-                        self.role_name)
+                        role_name)
         return None
 
 """
