@@ -11,31 +11,48 @@ import yaml
 """
 hello
 """
-def gen_include_create_group(group):
+def gen_include_create_group(group, base_indentation = "    "):
     if group.servers == 0:
         return ""
 
-    create_group_servers = [
-    "    - name: Create servers of group '{}'".format(group.name),
-    "      import_role:",
-    "        name: create_server"]
+    setup_image_group = [
+        "{}- name: Setup image for servers of group '{}'".format(base_indentation, group.name),
+        "{}  import_role:".format(base_indentation),
+        "{}    name: setup_image".format(base_indentation)]
 
-    if group.has_role("create_server"):
-        create_group_servers.append(
-            "        vars_from: group/{}_create_server.yml".format(group.name))
+    setup_image_role = group.get_role("setup_image")
+    if setup_image_role and setup_image_role.variables:
+        setup_image_group.append("{}    vars:".format(base_indentation))
+        for key, value in setup_image_role.variables.iteritems():
+            setup_image_group.append("{}      - {}: {}".format(base_indentation, key, value))
+
+    setup_image = "\n".join(setup_image_group)
+
+    create_group_servers = [
+        "{}- name: Create servers of group '{}'".format(base_indentation, group.name),
+        "{}  import_role:".format(base_indentation),
+        "{}    name: create_server".format(base_indentation)]
+
+    create_server_role = group.get_role("create_server")
+    if create_server_role and create_server_role.variables:
+        create_group_servers.append("{}    vars:".format(base_indentation))
+        for key, value in create_server_role.variables.iteritems():
+            create_group_servers.append("{}      - {}: {}".format(base_indentation, key, value))
 
     create_group_servers.append(
-    "      with_items:")
+    "{}  with_items:".format(base_indentation))
 
     for i in xrange(0, group.servers, 1):
         create_group_servers.append(
-        "      - {}".format(group.get_server_name(i+1)))
+        "{}    - {}".format(base_indentation, group.get_server_name(i+1)))
 
-    create_group_servers.append("      loop_control:")
-    create_group_servers.append("        loop_var: server")
+    create_group_servers.append("{}  loop_control:".format(base_indentation))
+    create_group_servers.append("{}    loop_var: server".format(base_indentation))
     create_group_servers.append("")
 
-    return "\n".join(create_group_servers)
+    create_group = "\n".join(create_group_servers)
+
+    return "{}\n\n{}".format(setup_image, create_group)
 
 def gen_group_wait_for(group):
     wait_for = [
@@ -115,7 +132,12 @@ def gen_individual_playbook(group):
             playbook.append("    - name: Execute role '{}'".format(role.name))
             playbook.append("      import_role:")
             playbook.append("        name: {}".format(role.name))
-            playbook.append("        vars_from: {}".format(group.get_vars_filename(role.name)))
+
+            if role.variables:
+                playbook.append("      vars:")
+                for key, value in role.variables.iteritems():
+                    playbook.append("        - {}: {}".format(key, value))
+
             playbook.append("")
 
     else:
