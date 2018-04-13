@@ -22,7 +22,7 @@ class Group(object):
             self.parent.children.append(self)
 
         # Distasteful addition for now..
-        self.level = 0
+        self.level = 1
         group = self
         while True:
             if group.isRoot():

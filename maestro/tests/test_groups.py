@@ -84,9 +84,9 @@ def test_valid_groups():
     assert spark in compute.children
     assert compute_other in compute.children
 
-    assert databases.level == 0
-    assert sql.level == 1
-    assert neo4j.level == 1
+    assert databases.level == 1
+    assert sql.level == 2
+    assert neo4j.level == 2
 
 def test_get_server_name():
     assert databases.get_server_name(1) == "databases-001"
@@ -200,16 +200,16 @@ def test_third_layer():
     assert len(hpc2.roles) == 1
     assert len(hpc3.roles) == 1
 
-    assert hpc1.get_role("test").priority == 0
-    assert hpc2.get_role("test").priority == 0
-    assert hpc3.get_role("test").priority == 0
+    assert hpc1.get_role("test").priority == 1
+    assert hpc2.get_role("test").priority == 1
+    assert hpc3.get_role("test").priority == 1
 
     assert hpc3.get_role("test").variables == {"var1" : "a", "var2" : "b"}
 
     hpc2.add_role("test", {"var3" : "c", "var2" : "z"})
 
-    assert hpc2.get_role("test").priority == 1
-    assert hpc3.get_role("test").priority == 1
+    assert hpc2.get_role("test").priority == 2
+    assert hpc3.get_role("test").priority == 2
 
     assert hpc3.get_role("test").variables == {"var1" : "a", "var2" : "z", "var3" : "c"}
 
@@ -217,6 +217,6 @@ def test_third_layer():
                            "var2" : 2,
                            "var3" : 3})
 
-    assert hpc3.get_role("test").priority == 2
+    assert hpc3.get_role("test").priority == 3
 
     assert hpc3.get_role("test").variables == {"var1" : 1, "var2" : 2, "var3" : 3}
