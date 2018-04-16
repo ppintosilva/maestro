@@ -1,7 +1,2 @@
 ---
-#
-- name: Include cloud provider specific varialbes
-  include_vars: "vars/{{ provider }}.yml"
-
-#
-- include_tasks: "{{ provider }}.yml"
+- import_tasks: "{{ provider }}.yml"

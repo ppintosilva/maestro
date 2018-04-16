@@ -30,7 +30,7 @@
   when: server not in (openstack_servers | default([]) | map(attribute='name'))
 
 - name: Sleep before trying to add floating ip
-  wait_for: 
+  wait_for:
     timeout: "{{ timeout_before_floating_ip }}"
   delegate_to: localhost
   when: timeout_before_floating_ip != None
@@ -41,6 +41,6 @@
     reuse: yes
     server: "{{ server }}"
     network: "{{ external_network }}"
-    wait: true
+    wait: "{{ wait_for_floating_ip }}"
     timeout: "{{ timeout_add_floating_ip }}"
-  when: server not in (openstack_servers | default([]) | map(attribute='name'))
+  #when: server not in (openstack_servers | default([]) | map(attribute='name'))

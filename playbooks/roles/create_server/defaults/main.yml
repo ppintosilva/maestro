@@ -1,1 +1,12 @@
 provider: openstack
+
+# ---
+#
+# Provider specific variables
+#
+# It would be nice if the variables for each provider would sit on separate files
+# but for now they have to reside here to ensure that variable precedence is not
+# broken. An alternative would be to include_vars from a vars/provider.yml file,
+# but that would
+#
+# ---
