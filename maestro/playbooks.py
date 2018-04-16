@@ -18,26 +18,30 @@ def gen_include_create_group(group, base_indentation = "    "):
     setup_image_group = [
         "{}- name: Setup image for servers of group '{}'".format(base_indentation, group.name),
         "{}  import_role:".format(base_indentation),
-        "{}    name: setup_image".format(base_indentation)]
+        "{}    name: setup_image".format(base_indentation),
+        "{}    defaults_from: \"{{{{ {} }}}}\".yml".format(base_indentation, "provider")]
 
     setup_image_role = group.get_role("setup_image")
     if setup_image_role and setup_image_role.variables:
-        setup_image_group.append("{}    vars:".format(base_indentation))
+        setup_image_group.append("{}  vars:".format(base_indentation))
         for key, value in setup_image_role.variables.iteritems():
-            setup_image_group.append("{}      - {}: {}".format(base_indentation, key, value))
+            setup_image_group.append("{}    {}: {}".format(base_indentation, key, value))
 
     setup_image = "\n".join(setup_image_group)
 
     create_group_servers = [
         "{}- name: Create servers of group '{}'".format(base_indentation, group.name),
         "{}  import_role:".format(base_indentation),
-        "{}    name: create_server".format(base_indentation)]
+        "{}    name: create_server".format(base_indentation),
+        "{}    defaults_from: \"{{{{ {} }}}}\".yml".format(base_indentation, "provider")]
 
     create_server_role = group.get_role("create_server")
+
     if create_server_role and create_server_role.variables:
-        create_group_servers.append("{}    vars:".format(base_indentation))
+        create_group_servers.append("{}  vars:".format(base_indentation))
         for key, value in create_server_role.variables.iteritems():
-            create_group_servers.append("{}      - {}: {}".format(base_indentation, key, value))
+            create_group_servers.append("{}    {}: {}".format(base_indentation, key, value))
+
 
     create_group_servers.append(
     "{}  with_items:".format(base_indentation))
@@ -62,7 +66,7 @@ def gen_group_wait_for(group):
     "  remote_user: {}".format("TESTE"),
     "",
     "  tasks:",
-    "    - name: Wait for group instances to become reachable over WinRM",
+    "    - name: Wait for '{}' instances to become reachable over WinRM".format(group.name),
     "      wait_for_connection:",
     "        timeout: {}".format("TESTE"),
     ""]
