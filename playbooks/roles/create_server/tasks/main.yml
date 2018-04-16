@@ -1,2 +1,2 @@
 ---
-- import_tasks: "{{ provider }}.yml"
+- include_tasks: "{{ provider }}.yml"

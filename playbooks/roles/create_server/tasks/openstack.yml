@@ -35,6 +35,12 @@
   delegate_to: localhost
   when: timeout_before_floating_ip != None
 
+- set_fact:
+    floatingIp: "{{ openstack_servers | default([]) | json_query(\"[?name=='\" + server + \"'].accessIPv4\") }}"
+
+- debug:
+    var: floatingIp
+
 - name: Add floating ip to instance - reuse floating ip or create new one
   os_floating_ip:
     state: present
@@ -43,4 +49,5 @@
     network: "{{ external_network }}"
     wait: "{{ wait_for_floating_ip }}"
     timeout: "{{ timeout_add_floating_ip }}"
-  #when: server not in (openstack_servers | default([]) | map(attribute='name'))
+  when: (floatingIp | length) == 0 or (floatingIp | first) == ""
+  ignore_errors: yes

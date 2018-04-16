@@ -4,6 +4,8 @@
 #
 # ---
 
+provider: openstack
+
 # Instance details
 
 image: "cloud-xenial64"
