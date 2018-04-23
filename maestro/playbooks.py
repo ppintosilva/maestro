@@ -17,7 +17,7 @@ def gen_include_create_group(group, base_indentation = "    "):
 
     setup_image_group = [
         "{}- name: Setup image for servers of group '{}'".format(base_indentation, group.name),
-        "{}  import_role:".format(base_indentation),
+        "{}  include_role:".format(base_indentation),
         "{}    name: setup_image".format(base_indentation),
         "{}    defaults_from: \"{{{{ {} }}}}\".yml".format(base_indentation, "provider")]
 
@@ -31,7 +31,7 @@ def gen_include_create_group(group, base_indentation = "    "):
 
     create_group_servers = [
         "{}- name: Create servers of group '{}'".format(base_indentation, group.name),
-        "{}  import_role:".format(base_indentation),
+        "{}  include_role:".format(base_indentation),
         "{}    name: create_server".format(base_indentation),
         "{}    defaults_from: \"{{{{ {} }}}}\".yml".format(base_indentation, "provider")]
 
@@ -115,7 +115,7 @@ def gen_all_groups_playbook(groups):
     # The playbooks of roots are: import playbooks of children .. all the way to leaf nodes
     for root in roots:
         intermezzo.append(
-                "- import_playbook: group/{}.yml".format(root.name))
+                "- include_playbook: group/{}.yml".format(root.name))
 
     return "\n\n".join(intermezzo)
 
@@ -134,7 +134,7 @@ def gen_individual_playbook(group):
             if role.name == "create_server" or role.name == "setup_image":
                 continue
             playbook.append("    - name: Execute role '{}'".format(role.name))
-            playbook.append("      import_role:")
+            playbook.append("      include_role:")
             playbook.append("        name: {}".format(role.name))
 
             if role.variables:
@@ -148,7 +148,7 @@ def gen_individual_playbook(group):
         playbook = []
 
         for child in group.children:
-            playbook.append("- import_playbook: {}.yml".format(child.name))
+            playbook.append("- include_playbook: {}.yml".format(child.name))
             playbook.append("")
 
     return "\n".join(playbook)
