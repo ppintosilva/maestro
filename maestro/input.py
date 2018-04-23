@@ -81,7 +81,7 @@ def read_roles(dic, groups):
 
         # A single role as a string with no variables defined
         if isinstance(roles, str):
-            group.add_role(role_name, None, group.level)
+            group.add_role(roles, None, group.level)
 
         # A dictionary of roles
         elif isinstance(roles, dict):
