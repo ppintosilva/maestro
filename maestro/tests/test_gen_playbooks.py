@@ -11,11 +11,6 @@ orchestra = \
     webservers:
       shiny: 1
       nginx: 1
-      other: 2
-
-    databases:
-      sql: 1
-      other: 5
 
     generic:
         other: 5

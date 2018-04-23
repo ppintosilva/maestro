@@ -81,7 +81,7 @@ def read_roles(dic, groups):
 
         # A single role as a string with no variables defined
         if isinstance(roles, str):
-            group.add_role(role_name, None)
+            group.add_role(role_name, None, group.level)
 
         # A dictionary of roles
         elif isinstance(roles, dict):
@@ -89,10 +89,10 @@ def read_roles(dic, groups):
             for role_name, raw_variables in roles.iteritems():
                 variables = read_variables(raw_variables)
                 if group_name == "all":
-                    map(lambda x: x.add_role(role_name, variables),
+                    map(lambda x: x.add_role(role_name, variables, 0),
                         roots)
                 else:
-                    group.add_role(role_name, variables)
+                    group.add_role(role_name, variables, group.level)
 
         # No roles
         elif roles is None:
