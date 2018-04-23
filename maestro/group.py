@@ -18,19 +18,11 @@ class Group(object):
         self.children = []
         self.roles = []
 
-        if not self.isRoot():
+        if self.isRoot():
+            self.level = 1
+        else:
             self.parent.children.append(self)
-
-        # Distasteful addition for now..
-        self.level = 1
-        group = self
-        while True:
-            if group.isRoot():
-                break
-            else:
-                self.level += 1
-                group = group.parent
-
+            self.level = self.parent.level + 1
 
 
     def __str__(self):
@@ -99,6 +91,10 @@ class Group(object):
                         role_name)
         return None
 
+    def print_roles(self):
+        for role in self.roles:
+            print(str(role))
+
 """
 Objects of this class represent a role to be executed in a group of servers.
 """
@@ -111,9 +107,8 @@ class Role(object):
         self.priority = priority
 
     def __str__(self):
-        return "name = {name}, group_name = {group_name}, variables = {variables}".format(
+        return "name = {name}, variables = {variables}".format(
                 name = self.name,
-                group_name = self.group_name,
                 variables = self.variables)
 
 #############################
@@ -197,6 +192,7 @@ def for_each_group_above(group,
             group.parent,
             method,
             **kwargs)
+
 
 def merge_variables(no_precedence, precedence):
     result = no_precedence.copy()   # start with x's keys and values
