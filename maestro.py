@@ -17,7 +17,7 @@ import sys
 
 from maestro.input import read_roles, read_groups
 from maestro.inventory import gen_inventory
-from maestro.playbooks import gen_all_groups_playbook, gen_concerto, gen_individual_playbook, write_variables
+from maestro.playbooks import gen_all_groups_playbook, gen_concerto, gen_individual_playbook, write_variables, get_roots
 
 #sys.tracebacklimit = 0
 
@@ -83,9 +83,20 @@ def genesis(orchestra,
     # Read and spit out inventory
     groups = read_groups(yaml_groups_dict)
 
+    # Generate inventory
     with open('inventory/hosts', 'w') as inventory_file:
         inventory = gen_inventory(groups)
         inventory_file.write(inventory)
+
+    # Read defaults for create_server
+    # We need this because of we need the values of remote_user and timeout
+    # defaults_filename = "playbooks/roles/create_server/defaults/{}.yml".format(stage)
+    # with open(defaults_filename, 'r') as defaults_file:
+    #     create_server_defaults = yaml.safe_load(defaults_file)
+    #
+    # # Add defaults with priority -1 and propagate
+    # for root in get_roots(groups):
+    #     root.add_role("create_server", create_server_defaults, -1)
 
     # Parse roles contents
     if instruments:
@@ -96,6 +107,10 @@ def genesis(orchestra,
         # Write group vars to playbooks/group/vars/group_ROLE
         # Create playbooks/group/group_name.yaml
     for group in groups.values():
+        # Create folder in group_vars/GROUP_NAME
+        directory = "group_vars/{}".format(group.name)
+        if not os.path.exists(directory):
+            os.makedirs(directory)        
         # It's alright to generate variables for parent groups even though these are not used directly
         write_variables(group)
         # Non-leaf groups import playbooks of children

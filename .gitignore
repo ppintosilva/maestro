@@ -117,3 +117,5 @@ playbooks/concerto.yml
 playbooks/intermezzo.yml
 playbooks/group/*.yml
 inventory/hosts
+group_vars/
+!group_vars/.gitkeep

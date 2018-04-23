@@ -86,7 +86,7 @@ class Group(object):
 
     def get_vars_filename(self, role_name):
         if self.has_role(role_name):
-            return "playbooks/group/vars/{}_{}.yml".format(
+            return "group_vars/{}/{}.yml".format(
                         self.name,
                         role_name)
         return None

@@ -63,12 +63,14 @@ def gen_group_wait_for(group):
     "# Wait play",
     "- hosts: {}".format(group.name),
     "  gather_facts: no",
-    "  remote_user: {}".format("TESTE"),
+    "  remote_user: \"{{{{ {} }}}}\"".format("username"),
+    #"  remote_user: {}".format(group.get_role("create_server").variables["username"]),
     "",
     "  tasks:",
     "    - name: Wait for '{}' instances to become reachable over WinRM".format(group.name),
     "      wait_for_connection:",
-    "        timeout: {}".format("TESTE"),
+    "        timeout: \"{{{{ {} }}}}\"".format("timeout_instance_boot"),
+    #"        timeout: {}".format(group.get_role("create_server").variables["timeout_instance_boot"]),
     ""]
 
     return "\n".join(wait_for)
@@ -125,7 +127,8 @@ def gen_individual_playbook(group):
         playbook = [
         "- hosts: {}".format(group.name),
         "  gather_facts: yes",
-        "  remote_user: {}".format("TESTE"),
+        "  remote_user: \"{{{{ {} }}}}\"".format("username"),
+        # "  remote_user: {}".format(group.get_role("create_server").variables["username"]),
         "  become: yes",
         "",
         "  tasks:"]
