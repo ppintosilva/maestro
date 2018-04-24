@@ -58,26 +58,32 @@ def gen_include_create_group(group, base_indentation = "    "):
 
     return "{}\n\n{}".format(setup_image, create_group)
 
-def gen_group_wait_for(group):
+def gen_group_wait_for(group, username, timeout):
+    create_server_role = group.get_role("create_server")
+
+    if create_server_role and create_server_role.variables and "username" in create_server_role.variables:
+	username = create_server_role.variables["username"]
+
+    if create_server_role and create_server_role.variables and "timeout_instance_boot" in create_server_role.variables:
+	timeout = create_server_role.variables["timeout_instance_boot"]
+
     wait_for = [
     "# Wait play",
     "- hosts: {}".format(group.name),
     "  gather_facts: no",
-    "  remote_user: \"{{{{ {} }}}}\"".format("username"),
-    #"  remote_user: {}".format(group.get_role("create_server").variables["username"]),
+    "  remote_user: {}".format(username),
     "",
     "  tasks:",
     "    - name: Wait for '{}' instances to become reachable over WinRM".format(group.name),
     "      wait_for_connection:",
-    "        timeout: \"{{{{ {} }}}}\"".format("timeout_instance_boot"),
-    #"        timeout: {}".format(group.get_role("create_server").variables["timeout_instance_boot"]),
+    "        timeout: {}".format(timeout),
     ""]
 
     return "\n".join(wait_for)
 
 ###
 
-def gen_concerto(groups, provider):
+def gen_concerto(groups, provider, create_server_defaults):
     concerto = [
     "# Play 1: Create all servers",
     "- hosts: localhost",
@@ -101,7 +107,7 @@ def gen_concerto(groups, provider):
     concerto.append("")
 
     for leaf in leaves:
-        concerto.append(gen_group_wait_for(leaf))
+        concerto.append(gen_group_wait_for(leaf, create_server_defaults["username"], create_server_defaults["timeout_instance_boot"]))
 
     concerto.append("")
 
@@ -122,13 +128,17 @@ def gen_all_groups_playbook(groups):
     return "\n\n".join(intermezzo)
 
 
-def gen_individual_playbook(group):
+def gen_individual_playbook(group, username):
     if group.isLeaf():
+        create_server_role = group.get_role("create_server")
+
+        if create_server_role and create_server_role.variables and "username" in create_server_role.variables:
+            username = create_server_role.variables["username"]
+
         playbook = [
         "- hosts: {}".format(group.name),
         "  gather_facts: yes",
-        "  remote_user: \"{{{{ {} }}}}\"".format("username"),
-        # "  remote_user: {}".format(group.get_role("create_server").variables["username"]),
+       	"  remote_user: {}".format(username),
         "  become: yes",
         "",
         "  tasks:",

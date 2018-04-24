@@ -90,9 +90,10 @@ def genesis(orchestra,
 
     # Read defaults for create_server
     # We need this because of we need the values of remote_user and timeout
-    # defaults_filename = "playbooks/roles/create_server/defaults/{}.yml".format(stage)
-    # with open(defaults_filename, 'r') as defaults_file:
-    #     create_server_defaults = yaml.safe_load(defaults_file)
+    defaults_filename = "playbooks/roles/create_server/defaults/{}.yml".format(stage)
+    with open(defaults_filename, 'r') as defaults_file:
+        create_server_defaults = yaml.safe_load(defaults_file)
+
     #
     # # Add defaults with priority -1 and propagate
     # for root in get_roots(groups):
@@ -115,7 +116,7 @@ def genesis(orchestra,
         write_variables(group)
         # Non-leaf groups import playbooks of children
         with open('playbooks/group/{}.yml'.format(group.name), 'w') as playbook_file:
-            playbook = gen_individual_playbook(group)
+            playbook = gen_individual_playbook(group, create_server_defaults["username"])
             playbook_file.write(playbook)
 
     # Create playbooks/intermezzo.yaml
@@ -126,7 +127,7 @@ def genesis(orchestra,
     #   - Play 1: Creates all instances
     #   - Play 2: Waits for ssh
     with open('playbooks/concerto.yml', 'w') as concerto_file:
-        concerto_file.write(gen_concerto(groups, stage))
+        concerto_file.write(gen_concerto(groups, stage, create_server_defaults))
 
     # PRINT
     # Success! The following files were generated:
