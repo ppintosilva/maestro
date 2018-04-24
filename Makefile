@@ -8,54 +8,58 @@ green:=$(shell tput setaf 2)
 reset:=$(shell tput sgr0)
 
 # Props to devstack
+.PHONY: all
 all:
 	@echo "This just saved you from a terrible mistake!"
 
 # Destroy all generated files - but not the servers
+.PHONY: clean
 clean:
-
-
-# Destroy all generated files and servers
-armageddon:
+	@rm -rf playbooks/concerto.{yml,retry} playbooks/intermezzo.{yml,retry} && find playbooks/group/ -type f -not -name '.gitkeep' -print0 | xargs -0 -r rm -rf -- && find group_vars -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -r rm -rf -- && echo OK!
 
 ###
 ###
 ###
 
 # Install stuff
+.PHONY: virtualenv
 virtualenv: /usr/bin/python2
 	$(info $(blue)Making new virtualenv at ./ENV]$(reset))
-	@/usr/bin/python2 -m virtualenv ENV
+	@$< -m virtualenv ENV
 
-pipdependencies: ENV/bin/pip2.7 requirements.txt
+.PHONY: pipdependencies
+pipdependencies: ENV/bin/pip requirements.txt
 	$(info $(blue)Installing pip requirements in virtualenv$(reset))
-	@ENV/bin/pip install -r requirements.txt
+	@$< install -r requirements.txt
 
+.PHONY: install
 install: virtualenv pipdependencies
-	$(info $(green) OK! $(reset))
+	@echo OK!
 
 ###
 ###
 ###
 
 # Install extra-roles
+.PHONY: extraroles
 extraroles: ENV/bin/ansible-galaxy supplementary-roles.yml
 	$(info $(blue)Installing supplementary ansible galaxy roles $(reset))
-	@ENV/bin/ansible-galaxy install -r requirements.yml
+	@$< install -r supplementary-roles.yml
 
 # Individual role sanity check
-tests: tests
-	@pytest tests
-	@ansible-playbook -i inventory/openstack.py playbooks/roles/setup_image/tests/test.yml
-	@ansible-playbook -i inventory/openstack.py playbooks/roles/create_server/tests/test.yml
+.PHONY: tests
+tests: maestro/tests
+	@pytest $< -vv
 
 # Create image with default values (ubuntu 16.04)
-image:
-	@ansible-playbook -i inventory/openstack playbooks/setup-image.yml
+.PHONY: image
+image: playbooks/setup-image.yml
+	@ansible-playbook -i inventory $<
 
 # Create server with default values (4 GB RAM, ubuntu 16.04)
-server:
-	@ansible-playbook -i inventory/openstack.py playbooks/create-server.yml
+.PHONY: server
+server: playbooks/create-server.yml
+	@ansible-playbook -i inventory $<
 
 
 ###
@@ -63,19 +67,22 @@ server:
 ###
 
 # Generate
-god: ENV/bin/python2.7 band.yml instruments.yml
-	@ENV/bin/python2.7 maestro band.yml --instruments "instruments.yml"
+.PHONY: maestro
+maestro: ENV/bin/python2.7 maestro.py 	
+	$< maestro.py orchestra.yml instruments.yml --stage="openstack"
+
 
 # Creating the servers
-bigbang:
-	@ansible-playbook -i inventory/openstack.py playbooks/concerto.yml
+.PHONY: concerto
+concerto: playbooks/concerto.yml inventory/hosts
+	ansible-playbook -i inventory $<
 
 # Running the roles
-inflation:
-	@ansible-playbook -i inventory/openstack.py playbooks/all.yml
-	# For each group
+.PHONY: intermezzo
+intermezzo: playbooks/intermezzo.yml inventory/hosts
+	ansible-playbook -i inventory $<
 
-	# For each host
-
-concerto:
-	god bigbang inflation
+# All in a big pipe
+.PHONY: bigbang
+bigbang: playbooks concerto intermezzo
+	@echo OK!
