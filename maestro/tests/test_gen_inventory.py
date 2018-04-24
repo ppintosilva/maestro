@@ -29,24 +29,24 @@ def test_gen_inventory():
     assert inventory  == \
 """[databases-neo4j-mongo-001]
 
-[neo4j-mongo.children]
+[neo4j-mongo:children]
 databases-neo4j-mongo-001
 
 [webservers-001]
 [webservers-002]
 
-[webservers.children]
+[webservers:children]
 webservers-001
 webservers-002
 
 [databases-sql-001]
 
-[sql.children]
+[sql:children]
 databases-sql-001
 
 [computing-other-001]
 
-[computing-other.children]
+[computing-other:children]
 computing-other-001
 
 [computing-spark-001]
@@ -57,7 +57,7 @@ computing-other-001
 [computing-spark-006]
 [computing-spark-007]
 
-[spark.children]
+[spark:children]
 computing-spark-001
 computing-spark-002
 computing-spark-003
@@ -66,11 +66,11 @@ computing-spark-005
 computing-spark-006
 computing-spark-007
 
-[computing.children]
+[computing:children]
 spark
 computing-other
 
-[databases.children]
+[databases:children]
 neo4j-mongo
 sql
 

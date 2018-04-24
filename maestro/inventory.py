@@ -18,7 +18,7 @@ def get_servers_inventory(group):
 
 
 def get_leaf_children(leaf):
-    inventory = ["[{}.children]".format(leaf.name)]
+    inventory = ["[{}:children]".format(leaf.name)]
 
     for i in xrange(0, leaf.servers, 1):
         inventory.append(leaf.get_server_name(i+1))
@@ -26,7 +26,7 @@ def get_leaf_children(leaf):
     return inventory
 
 def get_parent_children(group):
-    inventory = ["[{}.children]".format(group.name)]
+    inventory = ["[{}:children]".format(group.name)]
 
     for child in group.children:
         inventory.append(child.name)
