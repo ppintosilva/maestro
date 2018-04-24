@@ -51,7 +51,7 @@ def read_groups(dic, groups = dict(), parent = None):
 
         else:
             raise ValueError(
-                    "Each group should be either an integer or a new group. Leaf groups should be in the form: \"group_name: nservers\" ")
+                    "The value of group '{}' should be either an integer or a new group. Leaf groups should be in the form: \"group_name: nservers\"".format(name))
 
         if group.name in groups:
             raise ValueError(
