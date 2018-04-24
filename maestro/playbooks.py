@@ -131,7 +131,8 @@ def gen_individual_playbook(group):
         # "  remote_user: {}".format(group.get_role("create_server").variables["username"]),
         "  become: yes",
         "",
-        "  tasks:"]
+        "  tasks:",
+        ""]
 
         for role in group.roles:
             if role.name == "create_server" or role.name == "setup_image":
@@ -143,7 +144,7 @@ def gen_individual_playbook(group):
             if role.variables:
                 playbook.append("      vars:")
                 for key, value in role.variables.iteritems():
-                    playbook.append("        - {}: {}".format(key, value))
+                    playbook.append("        {}: {}".format(key, value))
 
             playbook.append("")
 
