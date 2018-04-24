@@ -19,7 +19,7 @@ def gen_include_create_group(group, base_indentation = "    "):
         "{}- name: Setup image for servers of group '{}'".format(base_indentation, group.name),
         "{}  include_role:".format(base_indentation),
         "{}    name: setup_image".format(base_indentation),
-        "{}    defaults_from: \"{{{{ {} }}}}\".yml".format(base_indentation, "provider")]
+        "{}    defaults_from: \"{{{{ {} }}}}.yml\"".format(base_indentation, "provider")]
 
     setup_image_role = group.get_role("setup_image")
     if setup_image_role and setup_image_role.variables:
@@ -33,7 +33,7 @@ def gen_include_create_group(group, base_indentation = "    "):
         "{}- name: Create servers of group '{}'".format(base_indentation, group.name),
         "{}  include_role:".format(base_indentation),
         "{}    name: create_server".format(base_indentation),
-        "{}    defaults_from: \"{{{{ {} }}}}\".yml".format(base_indentation, "provider")]
+        "{}    defaults_from: \"{{{{ {} }}}}.yml\"".format(base_indentation, "provider")]
 
     create_server_role = group.get_role("create_server")
 
@@ -88,7 +88,7 @@ def gen_concerto(groups, provider):
     "  tasks:",
     "    - name: Retrieve list of existing server names",
     "      os_server_facts:",
-    "      when: provider == openstack",
+    "      when: provider == \"openstack\"",
     ""]
 
     leaves = get_leaves(groups)

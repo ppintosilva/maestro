@@ -97,17 +97,17 @@ expected_concerto = \
   tasks:
     - name: Retrieve list of existing server names
       os_server_facts:
-      when: provider == openstack
+      when: provider == "openstack"
 
     - name: Setup image for servers of group 'computing'
       include_role:
         name: setup_image
-        defaults_from: "{{ provider }}".yml
+        defaults_from: "{{ provider }}.yml"
 
     - name: Create servers of group 'computing'
       include_role:
         name: create_server
-        defaults_from: "{{ provider }}".yml
+        defaults_from: "{{ provider }}.yml"
       with_items:
         - computing-001
         - computing-002
@@ -122,12 +122,12 @@ expected_concerto = \
     - name: Setup image for servers of group 'mongo'
       include_role:
         name: setup_image
-        defaults_from: "{{ provider }}".yml
+        defaults_from: "{{ provider }}.yml"
 
     - name: Create servers of group 'mongo'
       include_role:
         name: create_server
-        defaults_from: "{{ provider }}".yml
+        defaults_from: "{{ provider }}.yml"
       vars:
         image: cirros
         external_network: public
@@ -140,12 +140,12 @@ expected_concerto = \
     - name: Setup image for servers of group 'sql'
       include_role:
         name: setup_image
-        defaults_from: "{{ provider }}".yml
+        defaults_from: "{{ provider }}.yml"
 
     - name: Create servers of group 'sql'
       include_role:
         name: create_server
-        defaults_from: "{{ provider }}".yml
+        defaults_from: "{{ provider }}.yml"
       vars:
         username: l337
         flavor: m1.medium
