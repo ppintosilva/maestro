@@ -1,3 +1,7 @@
+- name: Retrieve list of existing server names
+  os_server_facts:
+  when: openstack_servers is not defined
+
 - name: Boot new instance
   os_server:
     name: "{{ server }}"
