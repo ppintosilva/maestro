@@ -85,10 +85,9 @@ class Group(object):
         return "{}-{:03d}".format(name, i)
 
     def get_vars_filename(self, role_name):
-        if self.has_role(role_name):
-            return "group_vars/{}/{}.yml".format(
-                        self.name,
-                        role_name)
+        return "group_vars/{}/{}.yml".format(
+                    self.name,
+                    role_name)
         return None
 
     def print_roles(self):
