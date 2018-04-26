@@ -83,7 +83,7 @@ def gen_group_wait_for(group, username, timeout):
 
 ###
 
-def gen_concerto(groups, provider, create_server_defaults):
+def gen_concerto(groups, provider, username = None):
     concerto = [
     "# Play 1: Create all servers",
     "- hosts: localhost",
@@ -95,6 +95,9 @@ def gen_concerto(groups, provider, create_server_defaults):
         concerto.append("    wait_for_instance: no")
         concerto.append("    wait_before_floating_ip: 8")
 
+    if username:
+        concerto.append("    username: {}".format(username))
+
     concerto.append("")
 
     leaves = get_leaves(groups)
@@ -103,13 +106,7 @@ def gen_concerto(groups, provider, create_server_defaults):
         concerto.append(gen_include_create_group(leaf))
 
     concerto.append("    - name: Refresh in-memory {} cache".format(provider))
-    concerto.append("      meta: refresh_inventory")
-    concerto.append("")
-
-    for leaf in leaves:
-        concerto.append(gen_group_wait_for(leaf, create_server_defaults["username"], create_server_defaults["timeout_instance_boot"]))
-
-    concerto.append("")
+    concerto.append("      meta: refresh_inventory\n")
 
     return "\n".join(concerto)
 
@@ -168,7 +165,7 @@ def gen_individual_playbook(group, username):
     return "\n".join(playbook)
 
 
-def write_variables(group):
+def write_variables(group, username):
     for role in group.roles:
         if role.variables is None:
             continue
@@ -177,3 +174,8 @@ def write_variables(group):
             yaml.safe_dump(role.variables,
                            role_vars_file,
                            default_flow_style=False)
+    # ansible_ssh_user
+    with open(group.get_vars_filename("ansible"), 'w') as ansible_vars_file:
+        ansible_vars_file.write("ansible_ssh_user: {}\n".format(username))
+        ansible_vars_file.write("ansible_ssh_connection: {}\n".format("ssh"))
+        ansible_vars_file.write("ansible_ssh_port: {}\n".format(22))
