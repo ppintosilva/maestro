@@ -99,6 +99,8 @@ def gen_concerto(groups, provider, username = None):
         concerto.append("    username: {}".format(username))
 
     concerto.append("")
+    concerto.append("  tasks:")
+    concerto.append("")
 
     leaves = get_leaves(groups)
 
