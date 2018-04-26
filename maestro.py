@@ -38,11 +38,17 @@ from maestro.playbooks import gen_all_groups_playbook, gen_concerto, gen_individ
     type = click.Choice(['openstack']),
     default = "openstack",
     help = "Name of target cloud provider")
+@click.option(
+    '--username',
+    type = str,
+    default = "jsnow",
+    help = "Default value of ansible_ssh_user. The username for the host machines.")
 # ---
 # ---
 def genesis(orchestra,
             instruments,
-            stage):
+            stage,
+            username):
     """
     Transform a bare set of requirements into an
     orchestra of servers ready to perform for you.
@@ -88,46 +94,31 @@ def genesis(orchestra,
         inventory = gen_inventory(groups)
         inventory_file.write(inventory)
 
-    # Read defaults for create_server
-    # We need this because of we need the values of remote_user and timeout
-    defaults_filename = "playbooks/roles/create_server/defaults/{}.yml".format(stage)
-    with open(defaults_filename, 'r') as defaults_file:
-        create_server_defaults = yaml.safe_load(defaults_file)
-
-    #
-    # # Add defaults with priority -1 and propagate
-    # for root in get_roots(groups):
-    #     root.add_role("create_server", create_server_defaults, -1)
-
     # Parse roles contents
     if instruments:
         yaml_roles_dict = yaml.safe_load(instruments)
         groups = read_roles(yaml_roles_dict, groups)
 
-    # For each group
-        # Write group vars to playbooks/group/vars/group_ROLE
-        # Create playbooks/group/group_name.yaml
+    # Write variables and generate individual playbooks
     for group in groups.values():
         # Create folder in group_vars/GROUP_NAME
         directory = "group_vars/{}".format(group.name)
         if not os.path.exists(directory):
-            os.makedirs(directory)        
+            os.makedirs(directory)
         # It's alright to generate variables for parent groups even though these are not used directly
-        write_variables(group)
+        write_variables(group, username)
         # Non-leaf groups import playbooks of children
         with open('playbooks/group/{}.yml'.format(group.name), 'w') as playbook_file:
-            playbook = gen_individual_playbook(group, create_server_defaults["username"])
+            playbook = gen_individual_playbook(group, username)
             playbook_file.write(playbook)
 
-    # Create playbooks/intermezzo.yaml
+    # Playbook for running all individual playbooks
     with open('playbooks/intermezzo.yml', 'w') as intermezzo_file:
         intermezzo_file.write(gen_all_groups_playbook(groups))
 
-    # Create playbooks/concerto.yaml
-    #   - Play 1: Creates all instances
-    #   - Play 2: Waits for ssh
+    # Create all instances
     with open('playbooks/concerto.yml', 'w') as concerto_file:
-        concerto_file.write(gen_concerto(groups, stage, create_server_defaults))
+        concerto_file.write(gen_concerto(groups, stage, username))
 
     # PRINT
     # Success! The following files were generated:
