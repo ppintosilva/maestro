@@ -176,6 +176,11 @@ def write_variables(group, username):
                            default_flow_style=False)
     # ansible_ssh_user
     with open(group.get_vars_filename("ansible"), 'w') as ansible_vars_file:
+        create_server_role = group.get_role("create_server")
+
+        if create_server_role and create_server_role.variables and "username" in create_server_role.variables:
+            username = create_server_role.variables["username"]
+
         ansible_vars_file.write("ansible_ssh_user: {}\n".format(username))
         ansible_vars_file.write("ansible_ssh_connection: {}\n".format("ssh"))
         ansible_vars_file.write("ansible_ssh_port: {}\n".format(22))
