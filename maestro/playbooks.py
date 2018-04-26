@@ -89,13 +89,13 @@ def gen_concerto(groups, provider, create_server_defaults):
     "- hosts: localhost",
     "  gather_facts: no",
     "  vars:",
-    "    provider: {}".format(provider),
-    "",
-    "  tasks:",
-    "    - name: Retrieve list of existing server names",
-    "      os_server_facts:",
-    "      when: provider == \"openstack\"",
-    ""]
+    "    provider: {}".format(provider)]
+
+    if provider == "openstack":
+        concerto.append("    wait_for_instance: no")
+        concerto.append("    wait_before_floating_ip: 8")
+
+    concerto.append("")
 
     leaves = get_leaves(groups)
 
