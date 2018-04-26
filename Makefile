@@ -67,19 +67,19 @@ server: playbooks/create-server.yml
 ###
 
 # Generate
-.PHONY: maestro
-maestro: maestro.py 	
+.PHONY: playbooks
+playbooks: maestro.py
 	python2.7 $< orchestra.yml instruments.yml --stage="openstack"
 
 
 # Creating the servers
-.PHONY: concerto
-concerto: playbooks/concerto.yml inventory/hosts
+.PHONY: servers
+servers: playbooks/concerto.yml inventory/hosts
 	ansible-playbook -i inventory $<
 
 # Running the roles
-.PHONY: intermezzo
-intermezzo: playbooks/intermezzo.yml inventory/hosts
+.PHONY: provision
+provision: playbooks/intermezzo.yml inventory/hosts
 	ansible-playbook -i inventory $<
 
 # All in a big pipe
