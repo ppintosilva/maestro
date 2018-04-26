@@ -23,14 +23,14 @@ clean:
 
 # Install stuff
 .PHONY: virtualenv
-virtualenv: /usr/bin/python2
+virtualenv:
 	$(info $(blue)Making new virtualenv at ./ENV]$(reset))
-	@$< -m virtualenv ENV
+	@python2 -m virtualenv ENV
 
 .PHONY: pipdependencies
-pipdependencies: ENV/bin/pip requirements.txt
+pipdependencies: requirements.txt
 	$(info $(blue)Installing pip requirements in virtualenv$(reset))
-	@$< install -r requirements.txt
+	@pip install -r $<
 
 .PHONY: install
 install: virtualenv pipdependencies
@@ -42,9 +42,9 @@ install: virtualenv pipdependencies
 
 # Install extra-roles
 .PHONY: extraroles
-extraroles: ENV/bin/ansible-galaxy supplementary-roles.yml
+extraroles: supplementary-roles.yml
 	$(info $(blue)Installing supplementary ansible galaxy roles $(reset))
-	@$< install -r supplementary-roles.yml
+	@ansible-galaxy install -r $<
 
 # Individual role sanity check
 .PHONY: tests
@@ -68,8 +68,8 @@ server: playbooks/create-server.yml
 
 # Generate
 .PHONY: maestro
-maestro: ENV/bin/python2.7 maestro.py 	
-	$< maestro.py orchestra.yml instruments.yml --stage="openstack"
+maestro: maestro.py 	
+	python2.7 $< orchestra.yml instruments.yml --stage="openstack"
 
 
 # Creating the servers
