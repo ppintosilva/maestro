@@ -9,6 +9,12 @@ Orchestrate software-ready clusters on the cloud
 
 ## TL;DR
 
+Install `maestro`:
+1. aa
+2. bb
+3. cc
+
+Use `maestro`:
 1. aa
 2. bb
 3. cc
@@ -31,9 +37,7 @@ But if the reasons above are not sufficient to use **maestro**, or the underlyin
 
 ### To learn or not to learn `ansible`
 
-Why don't I just learn and use ansible directly then? Or a different orchestration tool for that matter? You should learn ansible. And you're using ansible when working with **maestro**. What I noticed when using ansible is that a lot of playbooks end up with similar structure. I worked out what how to replicate this structure automatically to avoid brainless copy-pasting. What **maestro** does is to generate the files necessary to let ansible setup your cluster. User input is still necessary, but you don't have to write the ansible playbooks or the hosts inventory file yourself.
-
-So, you don't have to know ansible to the same extent that an experienced user has in order to use maestro and setup your cluster on the cloud. In fact, knowing ansible is not a requirement for basic usage (and I've tried to kept it that way as much as possible). However, it certainty helps that you know or at least understand the main concepts behind ansible. When you start writing your own roles, learning ansible will become inevitable. At the end of the day, **maestro** is just a wrapper for ansible. Hopefully, a useful one.
+Why don't I just learn and use ansible directly then? Or a different orchestration tool for that matter? You should learn ansible. And you're using ansible when working with **maestro**. What I noticed when using ansible is that a lot of playbooks end up with similar structure. I worked out what how to replicate this structure automatically to avoid brainless copy-pasting. What **maestro** does is to generate the files necessary to let ansible setup your cluster. User input is still necessary, but you don't have to write the ansible playbooks or the hosts inventory file yourself. So, you don't have to know ansible to the same extent that an experienced user has in order to use maestro and setup your cluster on the cloud. In fact, knowing ansible is not a requirement for basic usage (and I've tried to make it that way as much as possible). However, it certainty helps that you know or at least understand the main concepts behind ansible. When you start writing your own roles, learning ansible will become inevitable. At the end of the day, **maestro** is just a wrapper for ansible. Hopefully, a useful one.
 
 ## Overview
 
@@ -47,13 +51,15 @@ In software systems, . So, in cloud sett it's not uncommon to have groups of mac
 
 And these groups os servers have quite distinct software dependencies. Database instances have server-side software installed, whilst Processing and Webservers have much lighter client libraries installed in order to query the databases.
 
-### Main components
+### Main actors
 
 ### Workflow
 
 ## Installation
 
 ## Usage
+
+List of files (file | (input/output) | description)
 
 ### `maestro.py`
 
@@ -73,11 +79,13 @@ And these groups os servers have quite distinct software dependencies. Database 
 
 ### Patterns
 
-### Supplementary Roles
+### Redefining defaults
 
-### Writing your own Roles
+### Supplementary roles
 
-### Cloud Providers
+### Writing your own roles
+
+### Cloud providers
 
 ### Versioning your cluster
 
