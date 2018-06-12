@@ -119,3 +119,8 @@ playbooks/group/*.yml
 inventory/hosts
 group_vars/
 !group_vars/.gitkeep
+
+# User input files
+/instruments.yml
+/orchestra.yml
+/test.yml
