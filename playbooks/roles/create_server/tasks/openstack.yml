@@ -23,8 +23,12 @@
           sudo: ALL=(ALL) NOPASSWD:ALL
           groups: users, admin
           ssh-impot-id: None
-          lock_passwd: true
+          lock_passwd: TRUE
           ssh-authorized-keys: {{ pubkey }}
+
+      bootcmd:
+        - echo 127.0.0.1 {{ server }} >> /etc/hosts
+        - [ cloud-init-per, once]
 
       packages:
         - python-minimal
@@ -40,7 +44,8 @@
   delegate_to: localhost
   when: timeout_before_floating_ip != None and server not in (openstack_servers | default([]) | map(attribute='name'))
 
-- set_fact:
+- name: Set fact of server - floating ip
+  set_fact:
     floatingIp: "{{ openstack_servers | default([]) | json_query(\"[?name=='\" + server + \"'].accessIPv4\") }}"
 
 - name: Add floating ip to instance - reuse floating ip or create new one

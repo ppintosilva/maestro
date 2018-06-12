@@ -1,9 +1,14 @@
----
 - hosts: localhost
   gather_facts: no
+  vars:
+    provider: openstack
   vars_prompt:
     - name: "server"
       prompt: "Name of instance"
       private: no
-  roles:
-      - create_server
+
+  tasks:
+    - name: Create server '{{ server }}'
+      import_role:
+        name: create_server
+        defaults_from: "openstack.yml"
