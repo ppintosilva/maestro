@@ -27,6 +27,7 @@
           ssh-authorized-keys: {{ pubkey }}
 
       packages:
+        - python-minimal
         - ansible
         - make
 

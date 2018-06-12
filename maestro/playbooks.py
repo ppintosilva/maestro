@@ -93,7 +93,7 @@ def gen_concerto(groups, provider, username = None):
 
     if provider == "openstack":
         concerto.append("    wait_for_instance: no")
-        concerto.append("    wait_before_floating_ip: 8")
+        concerto.append("    timeout_before_floating_ip: 10")
 
     if username:
         concerto.append("    username: {}".format(username))
