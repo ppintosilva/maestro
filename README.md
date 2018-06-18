@@ -21,7 +21,16 @@ Use `maestro`:
 
 ---
 
-## What is `maestro`
+# Contents
+1. [What is `maestro`](#introduction)
+2. [Why `maestro`](#motivation-maestro)
+3. [Why `ansible`](#motivation-ansible)
+4. [Installation](#installation)
+5. [Usage](#usage)
+6. [Beyond the basics](#advanced)
+7. [License](#license)
+
+## What is `maestro` <a name="introduction"></a>
 
 In short, **maestro** is a wrapper for ansible. It generates ansible playbooks and inventory file from a description of the cluster, which is given by two input files:
 
@@ -37,7 +46,7 @@ The generated ansible playbooks have two purposes:
 
 With the generated ansible files you can now get your cluster up and running with the necessary software, faster than before, without having to write the playbook and inventory files yourself.
 
-## Why `maestro`
+## Why `maestro` <a name="motivation-maestro"></a>
 
 ### When disaster strikes
 
@@ -51,7 +60,7 @@ There is no doubt that *Reproducible Research* is a good thing. However, when it
 
 But if the reasons above are not sufficient to use **maestro**, or the underlying orchestration tools (ansible), then *because it's faster* should be a good enough reason. These and similar tools (e.g. puppet, chef, juju, saltstack) enable you to get a cluster up and running much quicker than you would otherwise.
 
-## Why `ansible`
+## Why `ansible` <a name="motivation-ansible"></a>
 
 ### Group it to win it
 
@@ -73,7 +82,7 @@ I found that ansible makes it easier to address servers by functionality. The in
 
 But why do I need **maestro**? Why don't I just learn and use ansible directly then? Or a different orchestration tool for that matter? You should learn ansible. And you're using ansible when working with **maestro**. What I noticed when using ansible is that a lot of playbooks end up with similar structure. I worked out what how to replicate this structure automatically to avoid brainless copy-pasting. What **maestro** does is to generate the files necessary to let ansible setup your cluster. User input is still necessary, but you don't have to write the ansible playbooks or the hosts inventory file yourself. So, you don't have to know ansible to the same extent that an experienced user has in order to use maestro and setup your cluster on the cloud. In fact, knowing ansible is not a requirement for basic usage (and I've tried to make it that way as much as possible). However, it certainty helps that you know or at least understand the main concepts behind ansible. When you start writing your own roles, learning ansible will become inevitable. At the end of the day, **maestro** is just a wrapper for ansible. Hopefully, a useful one.
 
-## Installation
+## Installation <a name="installation"></a>
 
 Installing **maestro** should be pretty straightforward whether you use the available Makefile or not.
 
@@ -88,7 +97,7 @@ Using the `Makefile`:
 2.
 
 
-## Usage
+## Usage <a name="usage"></a>
 
 List of files (file | (input/output) | description)
 
@@ -106,11 +115,9 @@ List of files (file | (input/output) | description)
 
 ### `makefile`
 
-## Advice
+## Beyond the basics <a name="advanced"></a>
 
 . Whenever we modify the *orchestra* or *instruments* we need to re-execute **maestro**.
-
-## Beyond the basics
 
 ### Patterns
 
@@ -134,4 +141,4 @@ Can be specified:
   - By creating a new directory 'vars' in the roles directory and populating 'main.yml'
   - Changing the variables at 'playbooks/roles/ROLE_NAME/defaults/main.yml' - although this affects every
 
-## License
+## License <a name="license"></a>
