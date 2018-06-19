@@ -32,19 +32,18 @@ pipdependencies: requirements.txt
 	$(info $(blue)Installing pip requirements in virtualenv$(reset))
 	@pip install -r $<
 
+.PHONY: extraroles
+extraroles: supplementary-roles.yml
+	$(info $(blue)Installing supplementary ansible galaxy roles $(reset))
+	@ansible-galaxy install -r $<
+
 .PHONY: install
-install: virtualenv pipdependencies
+install: virtualenv pipdependencies extraroles
 	@echo OK!
 
 ###
 ###
 ###
-
-# Install extra-roles
-.PHONY: extraroles
-extraroles: supplementary-roles.yml
-	$(info $(blue)Installing supplementary ansible galaxy roles $(reset))
-	@ansible-galaxy install -r $<
 
 # Individual role sanity check
 .PHONY: tests
