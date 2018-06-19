@@ -9,16 +9,16 @@ Orchestrate groups of software-ready instances on the cloud
 
 ## TL;DR
 
-**Base Requirements**: python2.7, virtualenv
+**Base Requirements**: python2.7, virtualenv, access to the cloud (authentication + networking setup)
 
 **Installation**: `make install`
 
 **Usage**:
 1. `python maestro.py orchestra.yml instruments.yml`
-2. `ansible-playbook -i inventory concerto.yml`
-3. `ansible-playbook -i inventory intermezzo.yml`
+2. `ansible-playbook -i inventory playbooks/concerto.yml`
+3. `ansible-playbook -i inventory playbooks/intermezzo.yml`
 
-**Supported cloud providers**: only *openstack*, but it's easy to extend support to other [cloud providers](#contributing).
+**Supported cloud providers**: only *openstack* at the moment, but it's easy to extend support to other [cloud providers](#contributing).
 
 ---
 
@@ -145,6 +145,14 @@ Let's look at some of these in more detail.
 ```
 Usage: maestro.py [OPTIONS] ORCHESTRA [INSTRUMENTS]
 
+  ORCHESTRA is a yaml file which lists the names and number of servers of
+  each group and their children.
+
+  INSTRUMENTS is a yaml file which lists the roles and variables of each
+  group of servers.
+
+  STAGE is the name of the cloud provider, one of: {'openstack'}
+
 Options:
   --stage [openstack]  Name of target cloud provider
   --username TEXT      Default value of ansible_ssh_user. The username for the
@@ -166,31 +174,157 @@ See table above for information on generated output files.
 
 ### `orchestra.yml`
 
-The first of two inputs
+The first of the two inputs describes the groups of servers in the cluster. This description is provided in yaml format. Consider the following example below:
 
 ```
+databases:
+  sql: 1
+  neo4j: 1
 
+webservers: 2
+
+computing:
+  spark: 7
+  other: 1
 ```
+
+which translates to the following list of groups:
+
+| Group Name      | Parent        | Is Leaf | Is Root | Number of servers |
+| --------        | ------------  | --------| ------- | -----------       |
+| databases       | None          | No      | Yes     | 0                 |
+| webservers      | None          | Yes     | Yes     | 2                 |
+| computing       | None          | No      | Yes     | 0                 |
+| sql             | databases     | Yes     | No      | 1                 |
+| neo4j           | databases     | Yes     | No      | 1                 |
+| spark           | None          | Yes     | No      | 7                 |
+| computing-other | None          | Yes     | No      | 1                 |
+
+The resulting cluster is composed of 7 distinct groups and 12 servers in total. You may notice that only leaf groups have a non-zero number of servers. This is just an implementation detail. In practice, the number of servers for each non-leaf group is equal to the sum of servers of it's children groups. So, when you run a command against a group, that process is repeated along its children and children's children and so on.
+
+The **orchestra** is responsible for generating two very important files: the *inventory* and the *concerto* playbook. The [inventory](https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html) is what enables ansible to work simultaneously against multiple systems in your infrastructure. The concerto defines an ansible playbook which creates the infrastructure from scratch, or adds new servers to the existing infrastructure.
+
+When defining *orchestra.yml* be sure to check out the rules of the YAML markup language. **maestro** will throw back at you any syntax errors. There are a number of websites that provide a yaml parser for free ([for instance](http://yaml-online-parser.appspot.com/)).
+
 
 ### `instruments.yml`
 
-### `inventory/hosts`
+Using *instruments* to describe the software requirements of each group is what allows you go from a bare-bones set of machines to a fully ready to seek-and-destroy cluster. Combining *instruments* with your *orchestra* is what makes **maestro** worthwhile and enables you to harvest the full powers of ansible for cloud orchestration and automation. However, it's worthwhile noting that this input is **optional** and is not necessary run **maestro**. A bare-bones cluster is a perfectly reasonable starting point.
+
+In practice, this boils down to specifying which ansible roles are executed by which group. You can write the ansible roles yourself or use ones from Ansible Galaxy. That is why Ansible Galaxy works so great here. It's basically plug-and-play. Let's provide a few examples, using the **orchestra** defined above:
+
+```
+
+```
+
+Variables are written to:
+
+Then ansible takes care of merging them, for instance when a parent and child group have the same variable defined.
+
 
 ### `playbooks/concerto.yml`
 
+The concerto playbook is responsible for building your infrastructure in the cloud. After it has been generated with **maestro**, you can execute the playbook with:
+
+```
+ansible-playbook -i inventory playbook/concerto.yml
+```
+
+To accomplish this, it uses two different roles that I wrote: *create_server* and *setup_image*. They are generic wrappers around [ansible cloud modules](https://docs.ansible.com/ansible/latest/modules/list_of_cloud_modules.html) and can be found in *playbook/roles/*. As the names suggest, these modules are responsible for setting up the images for the virtual machines and the vms themselves. For openstack, I used the modules *os_server*, *os_image* and *os_floating_ip*. The variables defined here are therefore an extension of the variables required for those modules. The variables may also vary between the cloud-provider, although some will be required regardless. I've tested and setup the default variables so that you can use them directly. The default OS image is Ubuntu 16.04.
+
+The role *setup_image* downloads the image from the url (from [cloud images](http://cloud-images.ubuntu.com) in this case) and uploads it and adds it to the image registry in the cloud. This works well for openstack. However, the behavior can be different for other providers. The *create_server* role then takes the server name and image name as inputs, along others, and boots the vm. If a virtual machine with the same name exists already, then it ignores the task. Cloud images can only be used with ssh keys. In my case setting the keypair wasn't enough because the private cloud that I was using was poorly configured and administered. Hence, the public key is injected via cloud-init instead. That is why there is a variable that sets the public key. It is important that the public key exists and the path is correct, otherwise if you're using a cloud image (as per default), you might not be able to ssh into the vm after it is created. This setup is generic and flexible enough that you can have your groups boot completely different operating systems. The role also tries to add a floating ip is to the instance.
+
+The default variables for *setup_image* with *openstack* are:
+
+```
+provider: openstack
+
+image: "cloud-xenial64"
+image_format: "qcow2"
+cpu_arch: "x86_64"
+distro: "ubuntu"
+image_url: "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
+timeout_upload_image: 300
+```
+
+The default variables for *create_server* with *openstack* are:
+
+```
+provider: openstack
+
+server:
+image: "cloud-xenial64"
+flavor: "m1.medium"
+sec_groups: "default"
+keypair:
+volumes:
+private_network:
+external_network: "public"
+username: "jsnow" # of House Stark
+pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub' | expanduser) }}"
+wait_for_instance: yes
+timeout_instance_boot: 600
+timeout_before_floating_ip:
+wait_for_floating_ip: no
+timeout_add_floating_ip: 120
+```
+
+You can change the default values for these variables by defining them in the **instruments** file:
+
+```
+all:
+  setup_image:
+    image: ubuntu14
+    image_url: "http://cloud-images.ubuntu.com/trusty/current/trusty-server-cloudimg-amd64-disk1.img"
+  create_server:
+    image: ubuntu14
+    flavor: m1.big
+    username: geronimo
+```
+
+Or you can apply the roles to individual groups instead. The concerto playbook populates the server variable automatically, so you don't have to worry about that. There are two variables that you can set using **maestro** instead. I only chose two variables for simplicity and I chose these two because they are the most likely to be changed: *provider* and *username*. The reason for this is that *group_vars* don't work and can't be used in this case because the playbook is applied to localhost and not to the groups individually (these don't actually exist yet, we are creating them). Thus, the concerto playbook lists these variables explicitly.
+
+There is one **requirement** for this to work in **openstack** however (I'm not sure about other cloud providers). **You need to have a valid networking setup (private network + router to external network)** to which the instances can attach to and gain connectivity to the Internet. I'm considering adding an additional role/playbook for setting up this base infrastructure. This might be available on a future release.
+
+
 ### `playbooks/intermezzo.yml`
+
+
+
+```
+ansible-playbook -i inventory playbook/intermezzo.yml
+```
+
+```
+ansible-playbook -i inventory playbook/group/GROUPNAME.yml
+```
 
 ### `Makefile`
 
+The makefile provides yet another wrapper for the commands described above. Below is a list of available targets:
+
+| Target          | Command                                                             | Pre-requisite           |
+| --------        | ------------                                                        |  --------               |
+| virtualenv      | Creates a virtualenv named 'ENV'                                    | -                       |
+| pipdependencies | Installs pip packages specified in requirements.txt                 | requirements.txt        |
+| extraroles      | Install ansible galaxy roles specified in supplementary-roles.yml   | supplementary-roles.yml |
+| install         | Runs the 3 targets above                                            | -                       |
+| tests           | Runs the tests on maestro/tests with pytest                         | maestro/tests           |
+| image           | Runs playbook to setup cloud image                                  | playbooks/setup-image.yml                |
+| server          | Runs playbook to create server                                      | playbooks/create-server.yml              |
+| playbooks       | python maestro.py orchestra.yml instruments.yml --stage="openstack" | maestro.py                               |
+| servers         | ansible-playbook -i inventory playbooks/concerto.yml                | playbooks/concerto.yml , inventory/hosts |
+| provision       | ansible-playbook -i inventory playbooks/intermezzo.yml              | playbooks/intermezzo.yml , inventory/hosts |
+| bigbang         | Runs the 3 targets above                                            | -                                          |
+| clean           | Removes all generated files          | None      |
+
+### Validating
+
+If you have played around clouds a lot, this is quite obvious, but if you haven't them this might be useful.
+
 ## Beyond the basics <a name="advanced"></a>
 
-. Whenever we modify the *orchestra* or *instruments* we need to re-execute **maestro**.
-
-### Patterns
-
-### Redefining defaults
-
-### Supplementary roles
+### Orchestra & Instruments Patterns
 
 ### Writing your own roles
 
@@ -210,4 +344,12 @@ Can be specified:
 
 ## Contributing <a name="contributing"></a>
 
+Extending **maestro** to support other cloud providers (aws, azure, google) should be quite straightforward. Ansible already provides modules for most cloud providers, so it's just a matter of writing a thin wrapper and integrating them in the *setup_image* and *create_server* roles. This may be particularly easy for people that have worked with Ansible and these providers before. So pull requests are very welcome!
+
+One can imagine generalising **maestro** to handle multiple cloud providers at the same time. That may be a possible way forward.
+
+Any comments or feedback is welcome. Feel free to email me at ppintodasilva@gmail.com.
+
 ## License <a name="license"></a>
+
+**maestro** is released under the Apache License, Version 2.0. For the complete license please refer to the file 'LICENSE'.

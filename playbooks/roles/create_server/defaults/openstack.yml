@@ -8,6 +8,7 @@ provider: openstack
 
 # Instance details
 
+server:
 image: "cloud-xenial64"
 flavor: "m1.medium"
 sec_groups: "default"
