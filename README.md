@@ -9,7 +9,7 @@ Orchestrate groups of software-ready instances on the cloud
 
 ## TL;DR
 
-**Base Requirements**: python2.7, virtualenv, access to the cloud (authentication + networking setup)
+**Base Requirements**: python2.7, virtualenv, access to the cloud (authentication + networking)
 
 **Installation**: `make install`
 
@@ -176,7 +176,7 @@ See table above for information on generated output files.
 
 The first of the two inputs describes the groups of servers in the cluster. This description is provided in yaml format. Consider the following example:
 
-```
+``` yaml
 databases:
   sql: 1
   neo4j: 1
@@ -209,15 +209,40 @@ When defining *orchestra.yml* be sure to check out the rules of the YAML markup 
 
 ### `instruments.yml`
 
-Using *instruments* to describe the software requirements of each group is what allows you to go from a bare-bones set of machines to a fully fire breathing cluster. Combining *instruments* with your *orchestra* is what makes **maestro** capture the full power and potential of ansible for cloud orchestration and automation. However, it's worthwhile noting that this input is **optional** and is not necessary run **maestro**. A bare-bones cluster is a perfectly reasonable starting point.
+Using *instruments* to describe the software requirements of each group is what allows you to go from a bare-bones set of machines to a fire breathing cluster. Combining *instruments* with your *orchestra* is what makes **maestro** worth the trouble and allows it to capture the full power and potential of ansible for cloud orchestration and automation. However, it's worthwhile noting that this input is **optional** and is not necessary run **maestro**. A bare-bones cluster is a perfectly reasonable starting point.
 
-In practice, this boils down to specifying which ansible roles are executed by which group. You can write the ansible roles yourself or use ones from Ansible Galaxy. That is why Ansible Galaxy works so great here. It's basically plug-and-play. Let's provide a few examples, using the **orchestra** defined above:
+In practice, this boils down to specifying which ansible roles are executed by which group. You can write the ansible roles yourself or use ones from Ansible Galaxy. That is why Ansible Galaxy works so great here. It's basically plug-and-play. Let's provide a few examples, using the **orchestra** defined before:
 
+``` yaml
+sql:
+  aaronpederson.mariadb:
+    mariadb_user: geronimo
+    maria_db_backup_enabled: true
+    mariadb_client: true
+
+databases:
+  mongrelion.docker:
+    docker_users: geronimo
+
+webservers:
+  debops.nginx:
+  Oefenweb.shiny-server:
+
+spark:
+  andrewrothstein.spark
+
+computing-other:
+  geronimo.helloworld:
+    repeat: 3
 ```
 
-```
+Let's go over these, one by one:
 
-Variables are written to:
+- **sql** -
+
+The *sql* group will run
+
+Group variables defined here are written to *group_vars*. Some defaults are also written to *group_vars*. When variables are defined simultaneously for parent and child groups, then ansible takes care of merging them and ensuring priority.
 
 Then ansible takes care of merging them, for instance when a parent and child group have the same variable defined.
 
@@ -236,9 +261,9 @@ The role *setup_image* downloads the image from the url (from [cloud images](htt
 
 The *create_server* role then takes the server name and image name as inputs, along others, and boots the vm. If a virtual machine with the same name exists, then the task is ignored. Cloud images can usually only be used with ssh keys. In my case setting the keypair wasn't enough because the private cloud that I was using was poorly configured and administered. Hence, **maestro** allows the public key to be injected via cloud-init instead. That is why there is a variable for passing your public key. It is important that the public key exists and the path is correct, otherwise if you're using a cloud image (as per default), you might not be able to ssh into the vm after it is created. This setup is generic and flexible enough that you can have your groups boot completely different operating systems. The role also tries to add a floating ip is to the instance.
 
-The default variables for *setup_image* with *openstack* are:
+The default variables for *setup_image* on *openstack* are:
 
-```
+``` yaml
 provider: openstack
 
 image: "cloud-xenial64"
@@ -249,9 +274,9 @@ image_url: "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg
 timeout_upload_image: 300
 ```
 
-The default variables for *create_server* with *openstack* are:
+The default variables for *create_server* on *openstack* are:
 
-```
+``` yaml
 provider: openstack
 
 server:
@@ -273,7 +298,7 @@ timeout_add_floating_ip: 120
 
 You can overwrite the default values for these variables by re-defining them in the **instruments** file:
 
-```
+``` yaml
 all:
   setup_image:
     image: ubuntu14
@@ -291,11 +316,15 @@ There is one **requirement** for this to work however. In **openstack** (I'm not
 
 ### `playbooks/intermezzo.yml`
 
+When *instruments* are provided, individual group playbooks are generated. These simply import the roles and variables provided by *instruments*. Again, these can be your own roles, or ones taken from Ansible Galaxy. As you could expect, the roles *create_server* and *setup_image* are ignored at this point. Additionally, only leaf groups have uniquely defined playbooks, whilst non-leaf groups simply import the individual playbooks of its children.
 
+The *intermezzo* playbook imports the playbooks for all root groups, which corresponds to importing all individual leaf group playbooks. You can run the *intermezzo* playbook with the command:
 
 ```
 ansible-playbook -i inventory playbook/intermezzo.yml
 ```
+
+To instead execute the playbook for a given group named 'GROUPNAME', simply run:
 
 ```
 ansible-playbook -i inventory playbook/group/GROUPNAME.yml
@@ -318,7 +347,7 @@ The makefile provides yet another wrapper for the commands described above. Belo
 | servers         | ansible-playbook -i inventory playbooks/concerto.yml                | playbooks/concerto.yml , inventory/hosts |
 | provision       | ansible-playbook -i inventory playbooks/intermezzo.yml              | playbooks/intermezzo.yml , inventory/hosts |
 | bigbang         | Runs the 3 targets above                                            | -                                          |
-| clean           | Removes all generated files          | None      |
+| clean           | Removes all generated files          | -      |
 
 ## Beyond the basics <a name="advanced"></a>
 
@@ -326,19 +355,25 @@ The makefile provides yet another wrapper for the commands described above. Belo
 
 ### Writing your own roles
 
-### Cloud providers
+Your cluster will really start to come alive once you start writing your own roles. These can be simple or more complex sets of tasks. You can create roles that clone a git repository and run a makefile. You can create roles that run docker compose on top of docker machines. You can create roles that bring microservices together. This really helps integrating self contained programs and applications in a larger ecosystem.
+
+Once you've written and tested your ansible role, all you need to do is to make sure it is available to ansible. You can place it at **playbooks/roles/** or at the path for roles defined via the ansible configuration file. Refer to ansible's roles [documentation page](https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html) to learn more about how to write and structure roles.
 
 ### Versioning your cluster
 
+It makes perfect sense to version control the description of your cluster. Your cluster may start off looking like one thing and end up looking like something completely different. It's only natural to experiment and iterate over the initial set of requirements. If there is an end application, research project or reproducible study, it is likely associated with one cluster (or several). Hence, it is associated with at least one cluster description. Then, to re-create the inventory file and playbooks necessary to reproduce the cluster, one just needs to clone/download **maestro** and run it against the description of the cluster.
 
-Vars for:
-  - setup_image
-  - create_server
+Here are the files that you may want to version control:
 
-Can be specified:
-  - In the roles file
-  - By creating a new directory 'vars' in the roles directory and populating 'main.yml'
-  - Changing the variables at 'playbooks/roles/ROLE_NAME/defaults/main.yml' - although this affects every
+- orchestra.yml
+- instruments.yml
+- requirements-roles.yml
+- roles written by you and added to *instruments.yml*
+
+where *requirements-roles.yml* contains the list of ansible galaxy roles required by your cluster. Originally this corresponds to *supplementary-roles*, but once you start adding galaxy roles to your *instruments.yml* file, then these become dependencies of the cluster, rather than just a supplementary set of roles.
+
+You have two ways of versioning the roles that you wrote yourself. They can live on their own repository on github, for instance, or you can include them together with the three files above. This decision depends on how coupled the role and research application are. It may not make sense for that role to exist outside that application. On the other hand, if the role is self-contained and is available at github, you may consider adding it to Ansible Galaxy and consequently to *requirements-roles.yml*.
+
 
 ## Contributing <a name="contributing"></a>
 
