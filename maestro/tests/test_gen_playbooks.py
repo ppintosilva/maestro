@@ -48,12 +48,12 @@ expected_databases_playbook = \
 expected_sql_playbook = \
 """- hosts: sql
   gather_facts: yes
-  remote_user: "{{ username }}"
+  remote_user: l337
   become: yes
 
   tasks:
 
-    - name: Execute role 'docker'
+    - name: Execute role \'docker\'
       include_role:
         name: docker
 """
@@ -61,7 +61,7 @@ expected_sql_playbook = \
 expected_mongo_playbook = \
 """- hosts: mongo
   gather_facts: yes
-  remote_user: "{{ username }}"
+  remote_user: dummy
   become: yes
 
   tasks:
@@ -70,12 +70,12 @@ expected_mongo_playbook = \
 expected_computing_playbook = \
 """- hosts: computing
   gather_facts: yes
-  remote_user: "{{ username }}"
+  remote_user: dummy
   become: yes
 
   tasks:
 
-    - name: Execute role 'docker'
+    - name: Execute role \'docker\'
       include_role:
         name: docker
       vars:
@@ -95,9 +95,6 @@ expected_concerto = \
     provider: openstack
 
   tasks:
-    - name: Retrieve list of existing server names
-      os_server_facts:
-      when: provider == "openstack"
 
     - name: Setup image for servers of group 'computing'
       include_role:
@@ -158,45 +155,14 @@ expected_concerto = \
 
     - name: Refresh in-memory openstack cache
       meta: refresh_inventory
-
-# Wait play
-- hosts: computing
-  gather_facts: no
-  remote_user: "{{ username }}"
-
-  tasks:
-    - name: Wait for 'computing' instances to become reachable over WinRM
-      wait_for_connection:
-        timeout: "{{ timeout_instance_boot }}"
-
-# Wait play
-- hosts: mongo
-  gather_facts: no
-  remote_user: "{{ username }}"
-
-  tasks:
-    - name: Wait for 'mongo' instances to become reachable over WinRM
-      wait_for_connection:
-        timeout: "{{ timeout_instance_boot }}"
-
-# Wait play
-- hosts: sql
-  gather_facts: no
-  remote_user: "{{ username }}"
-
-  tasks:
-    - name: Wait for 'sql' instances to become reachable over WinRM
-      wait_for_connection:
-        timeout: "{{ timeout_instance_boot }}"
-
 """
 
 def test_gen_individual_playbook():
 
-    databases_playbook = gen_individual_playbook(groups["databases"])
-    sql_playbook = gen_individual_playbook(groups["sql"])
-    mongo_playbook = gen_individual_playbook(groups["mongo"])
-    computing_playbook = gen_individual_playbook(groups["computing"])
+    databases_playbook = gen_individual_playbook(groups["databases"], "dummy")
+    sql_playbook = gen_individual_playbook(groups["sql"], "dummy")
+    mongo_playbook = gen_individual_playbook(groups["mongo"], "dummy")
+    computing_playbook = gen_individual_playbook(groups["computing"], "dummy")
 
     assert databases_playbook == expected_databases_playbook
     assert sql_playbook == expected_sql_playbook
