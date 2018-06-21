@@ -193,6 +193,9 @@ def for_each_group_above(group,
             **kwargs)
 
 
+"""
+Merge two dictionaries. One has precedence/priority over the other.
+"""
 def merge_variables(no_precedence, precedence):
     result = no_precedence.copy()   # start with x's keys and values
     result.update(precedence)    # modifies z with y's keys and values & returns None

@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+Methods for generating the ansible 'hosts' inventory file
 """
 
 from group import Group, get_leaves, get_roots, get_non_leaves
 
 """
-hello
+Helper methods
 """
 def get_servers_inventory(group):
     servers = []
@@ -33,7 +34,9 @@ def get_parent_children(group):
 
     return inventory
 
-
+"""
+Main method
+"""
 def gen_inventory(groups):
     ini_inventory = []
 

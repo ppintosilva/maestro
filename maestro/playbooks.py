@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Bananas
+Methods to generate ansible playbooks:
+    - concerto playbook
+    - individual playbooks
+    - intermezzo playbook
+
+Several optimizations and improvements can be made.
 """
 
 from group import Group, get_leaves, for_each_group_below, get_roots
@@ -58,6 +63,10 @@ def gen_include_create_group(group, base_indentation = "    "):
 
     return "{}\n\n{}".format(setup_image, create_group)
 
+
+"""
+Wait for server to be created - > ignored in this release due to instability
+"""
 def gen_group_wait_for(group, username, timeout):
     create_server_role = group.get_role("create_server")
 
@@ -82,7 +91,9 @@ def gen_group_wait_for(group, username, timeout):
     return "\n".join(wait_for)
 
 ###
-
+"""
+Main method to generate the concerto playbook
+"""
 def gen_concerto(groups, provider, username = None):
     concerto = [
     "# Play 1: Create all servers",
@@ -91,9 +102,9 @@ def gen_concerto(groups, provider, username = None):
     "  vars:",
     "    provider: {}".format(provider)]
 
-    if provider == "openstack":
-        concerto.append("    wait_for_instance: no")
-        concerto.append("    timeout_before_floating_ip: 10")
+    # if provider == "openstack":
+    #     concerto.append("    wait_for_instance: no")
+    #     concerto.append("    timeout_before_floating_ip: 10")
 
     if username:
         concerto.append("    username: {}".format(username))
@@ -114,6 +125,10 @@ def gen_concerto(groups, provider, username = None):
 
 ###
 
+
+"""
+Generate intermezzo playbook
+"""
 def gen_all_groups_playbook(groups):
     intermezzo = []
 
@@ -126,7 +141,11 @@ def gen_all_groups_playbook(groups):
 
     return "\n\n".join(intermezzo)
 
-
+"""
+Generate playbook for a group:
+    - leaf group -> include roles in tasks
+    - non-leaf group -> import playbooks of children
+"""
 def gen_individual_playbook(group, username):
     if group.isLeaf():
         create_server_role = group.get_role("create_server")
@@ -167,6 +186,9 @@ def gen_individual_playbook(group, username):
     return "\n".join(playbook)
 
 
+"""
+Write variables of group to file
+"""
 def write_variables(group, username):
     for role in group.roles:
         if role.variables is None:

@@ -18,6 +18,7 @@ volumes:
 # ---
 # Network details
 
+# If there is only one private_network, ansible attaches the instance to that without having to define it explicitly
 private_network:
 external_network: "public"
 
