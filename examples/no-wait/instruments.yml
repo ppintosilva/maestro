@@ -1,0 +1,9 @@
+# In cases where instances take very long to spawn (10+ min in an case that I worked with)
+#   you don't want to wait for every instance to finish spawning before you move to the next
+#   one. One way to avoid this is to disable wait_for_instance and insert a waiting time
+#   before adding a floating_ip. This works because adding a floating ip does not require
+#   the instance to be fully created.
+all:
+  create_server:
+    wait_for_instance: no
+    wait_before_floating_ip: 12  #seconds
