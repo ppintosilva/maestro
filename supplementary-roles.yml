@@ -1,7 +1,6 @@
 ## Databases
 - src: aaronpederson.mariadb
 - src: bennojoy.mysql
-- src: bennojoy.redis
 - src: zzet.postgresql
 - src: julienroubieu.neo4j
 - src: gheydon.mongodb
@@ -12,6 +11,7 @@
 - src: debops.nginx
 - src: jpnewman.apache
 - src: Oefenweb.shiny-server
+- src: bennojoy.redis
 - src: bennojoy.memcached
 - src: debops.etc_services
 
@@ -28,4 +28,6 @@
 
 ## Generic
 - src: mongrelion.docker
+- src: angstwad.docker_ubuntu
+- src: gantsign.kubernetes
 - src: bennojoy.ntp

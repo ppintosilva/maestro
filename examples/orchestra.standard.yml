@@ -1,0 +1,19 @@
+# Select whichever you like
+databases:
+  sql:
+    mysql: 1
+    mssql: 1
+    postgre: 1
+  neo4j: 1
+  mongodb: 1
+  cassandra: 1
+
+webservers:
+  nginx: 1
+  apache: 1
+  shiny: 1
+
+computing:
+  spark-hadoop: 8
+  rstudio: 2
+  other: 2

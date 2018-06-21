@@ -1,0 +1,17 @@
+all:
+  angstwad.docker_ubuntu:
+  gantsign.kubernetes:
+
+## Then you can run your own roles which call docker-compose, swarm, or kubernetes on top of docker
+
+## For instance:
+
+# sql:
+#   deploy-mssql-docker-container
+#   deploy-costum-mssql-database
+
+# spark:
+#   deploy-spark-docker-container
+#   deploy-costum-spark-application
+
+# ...
