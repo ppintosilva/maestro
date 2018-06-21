@@ -224,28 +224,27 @@ databases:
   mongrelion.docker:
     docker_users: geronimo
 
+spark:
+  andrewrothstein.spark
+
 webservers:
   debops.nginx:
   Oefenweb.shiny-server:
 
-spark:
-  andrewrothstein.spark
-
 computing-other:
-  geronimo.helloworld:
+  myrole.helloworld:
     repeat: 3
 ```
 
-Let's go over these, one by one:
+Let's go over these group by group:
 
-- **sql** -
+- **sql** - Include Role [aaronpederson.mariadb](https://galaxy.ansible.com/aaronpederson/mariadb/) with variables *mariadb_user*, *maria_db_backup_enabled* and *mariadb_client*. This is a simple example of how you can define a role for a group.
+- **databases** - Include Role [mongrelion.docker](https://github.com/mongrelion/ansible-role-docker) with variable *docker_users*. This role is propagated to both of it's children (sql and neo4j). One simple but effective strategy is to install docker and then deploy the desired software via containers. You may want to install docker for all groups or a selection of root/parent groups.
+- **spark** - Include Role [andrewrothstein.spark](https://github.com/andrewrothstein/ansible-spark) with default variables. You can include roles without specifying any variables. Also, you don't have to specify every variable available. In either case, the defaults are used for whichever variables left unspecified.
+- **webservers** - Include roles [debops.nginx](https://github.com/debops/ansible-nginx) and [Oefenweb.shiny-server](https://galaxy.ansible.com/Oefenweb/shiny-server/) with default variables. When including several roles without variables, you have to append ':' to the role name. This is a small yet important detail, which is essentially saying that each role is represented by a key-value pair, for which the value is an empty dictionary. This is different to the former case where a string was enough to represent the role (by name).
+- **computing-other** - Include your own role, available at *playbooks/roles*, at the directory for roles, or at Ansible Galaxy.
 
-The *sql* group will run
-
-Group variables defined here are written to *group_vars*. Some defaults are also written to *group_vars*. When variables are defined simultaneously for parent and child groups, then ansible takes care of merging them and ensuring priority.
-
-Then ansible takes care of merging them, for instance when a parent and child group have the same variable defined.
-
+Group variables defined here are written to *group_vars*. When variables are defined simultaneously for parent and child groups, ansible takes care of merging and ensuring priority. Some defaults are also written to *group_vars*, e.g. for roles *create_server* and *setup_image*. These two roles are built-in and differ from the rest. Please read the next section for more details.
 
 ### `playbooks/concerto.yml`
 
