@@ -137,7 +137,7 @@ def gen_all_groups_playbook(groups):
     # The playbooks of roots are: import playbooks of children .. all the way to leaf nodes
     for root in roots:
         intermezzo.append(
-                "- include_playbook: group/{}.yml".format(root.name))
+                "- import_playbook: group/{}.yml".format(root.name))
 
     return "\n\n".join(intermezzo)
 
@@ -180,7 +180,7 @@ def gen_individual_playbook(group, username):
         playbook = []
 
         for child in group.children:
-            playbook.append("- include_playbook: {}.yml".format(child.name))
+            playbook.append("- import_playbook: {}.yml".format(child.name))
             playbook.append("")
 
     return "\n".join(playbook)

@@ -40,9 +40,9 @@ computing:
 groups = read_roles(yaml.safe_load(instruments), groups)
 
 expected_databases_playbook = \
-"""- include_playbook: mongo.yml
+"""- import_playbook: mongo.yml
 
-- include_playbook: sql.yml
+- import_playbook: sql.yml
 """
 
 expected_sql_playbook = \
@@ -83,9 +83,9 @@ expected_computing_playbook = \
 """
 
 expected_intermezzo = \
-"""- include_playbook: group/databases.yml
+"""- import_playbook: group/databases.yml
 
-- include_playbook: group/computing.yml"""
+- import_playbook: group/computing.yml"""
 
 expected_concerto = \
 """# Play 1: Create all servers
