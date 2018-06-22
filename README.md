@@ -14,9 +14,18 @@ Orchestrate groups of software-ready instances on the cloud
 **Installation**: `make install`
 
 **Usage**:
+
 1. `python maestro.py orchestra.yml instruments.yml`
 2. `ansible-playbook -i inventory playbooks/concerto.yml`
-3. `ansible-playbook -i inventory playbooks/intermezzo.yml`
+3. (wait for servers to boot)
+4. `ansible-playbook -i inventory playbooks/intermezzo.yml`
+
+**What is happening?**
+
+1. Generates ansible playbooks
+2. Creates the servers (virtual machines) on the cloud
+3. Waiting...
+4. Installs/Runs stuff on the servers
 
 **Supported cloud providers**: only *openstack* at the moment, but it's easy to extend support to other [cloud providers](#contributing).
 
@@ -29,8 +38,9 @@ Orchestrate groups of software-ready instances on the cloud
 4. [Installation](#installation)
 5. [Usage](#usage)
 6. [Beyond the basics](#advanced)
-7. [Contributing](#contributing)
-8. [License](#license)
+7. [Troubleshooting](#troubleshooting)
+8. [Contributing](#contributing)
+9. [License](#license)
 
 ## What is `maestro` <a name="introduction"></a>
 
@@ -350,7 +360,13 @@ The makefile provides yet another wrapper for the commands described above. Belo
 
 ## Beyond the basics <a name="advanced"></a>
 
-### Input Patterns
+### Instruments - Advanced Patterns
+
+**maestro** abstracts many things about the underlying cloud environment. As with all abstractions, when something underneath the abstraction breaks, it leaks and you start observing unexpected, weird or erratic behavior. Once you figure out the root of the problem, you may need ways to configure what is underneath the abstraction. In the case of **maestro**, that is often done by changing the values for default variables. If there is a problem with *concerto* then you may need to change (and experiment with) the default variables for *create_server* and *setup_image*. If the problem lies instead with one of roles installed by Ansible Galaxy, then you need to rethink the variables for that role or, in extreme cases, write your own role or a wrapper/fix for that role.
+
+Let's look at a concrete example. The private cloud that I've worked with while developing *maestro* has a few problems. Instances can take over 10 minutes to build and key-pairs don't work properly. The latter was addressed by injecting the public ssh key via cloud-init instead of key pair. The former however required a more nuanced approach. If you simply try to adjust the build waiting time, then you may have to pick a value that ends up being smaller or bigger than what is needed, making the process fail or excruciatingly long. Of course, if you just use the defaults you might be oblivious to any waiting time at all. Instead, I experimented by setting the timer to nil, submitting the job to openstack and visually monitoring its completion. Furthermore, the *create_server* module is also responsible for assigning a floating ip to the instance. So, if you try to assign a floating ip right after you submit the build instance job to openstack, it fails. An additional timeout is needed between the two. But how do you pick that value? Well, you have to experiment. For me, 10+ seconds worked pretty well and openstack can assign a floating ip to the machine while it's in building state. But, all of this is abstracted to the user by the *create_server* module. So, if any of the assumptions implicitly made by the default variables fails, then you need to be on the look out and ready to define your own defaults.
+
+The folder *examples* provides some advanced pattern usage examples for *instruments* mostly. The *nowait* example corresponds to the one I described in the paragraph above. I'm sure there are many more usage patterns that are worth sharing and mentioning. Feel free to share yours via a pull request!
 
 ### Writing your own roles
 
@@ -372,6 +388,49 @@ Here are the files that you may want to version control:
 where *requirements-roles.yml* contains the list of ansible galaxy roles required by your cluster. Originally this corresponds to *supplementary-roles*, but once you start adding galaxy roles to your *instruments.yml* file, then these become dependencies of the cluster, rather than just a supplementary set of roles.
 
 You have two ways of versioning the roles that you wrote yourself. They can live on their own repository on github, for instance, or you can include them together with the three files above. This decision depends on how coupled the role and research application are. It may not make sense for that role to exist outside that application. On the other hand, if the role is self-contained and is available at github, you may consider adding it to Ansible Galaxy and consequently to *requirements-roles.yml*.
+
+## Troubleshooting <a name="troubleshooting"></a>
+
+As with any other piece of software, things can break. Or not work according to expectations. Below are some common problems and solutions:
+
+#### Forgetting to set your cloud authentication credentials
+You run your playbooks and you get an error message from ansible. If you're using openstack and the word *keystonerc* shows up somewhere in there, then you forgot to set your credentials by sourcing the openstack_rc file.
+
+#### Forgetting to activate your virtual environment
+If your command line does not recognize the command 'ansible' or 'ansible-playbook', then you forgot to activate your virtual environment.
+
+#### Running an 'empty' group playbook
+**maestro** generates an individual playbook for each group regardless of whether you defined any *instruments* for that group or not. When you don't define *instruments* for a leaf group, you end up with the skeleton for that group's playbook, but with an empty set of tasks. So, naturally, if you try to run that playbook, ansible will complain about an empty list of tasks. For those groups, you can use a dummy role, for instance *webofmars.dummy*, just to make sure everything runs smoothly.
+
+#### Misspelling a role name in *instruments*
+Ansible complains about not recognising a role. If that's the case, then you might misspelled the role name wrong, or forgot to install that role.
+
+#### Improper usage of *orchestra* and *instruments*
+**maestro** displays most errors regarding improper *orchestra* or *instruments* usage, including yaml syntax errors. One example of invalid usage is to name one of the root groups: 'other'.
+
+#### Forgetting to append ':' when defining multiple roles without variables in *instruments*
+Another common mistake is to forget to append the character ':' to the role name when listing multiple roles without variables for a group in *instruments*. In this case, the python yaml module will throw an exception. Ideally we wouldn't have to, but we can't mix together strings and dictionaries in the same list. I had to choose between:
+
+``` yaml
+# Option A
+groupX:
+  role1:
+  role2:
+
+# Option B
+groupX:
+  - role1:
+  - role2:
+
+# This is invalid because you have a list containing different types (strings and dictionaries)
+groupX:
+  - role1
+  - role2
+  - role3:
+    var1: value1
+    var2: value2
+```
+Thus I opted for the simpler version (Option A).
 
 
 ## Contributing <a name="contributing"></a>
