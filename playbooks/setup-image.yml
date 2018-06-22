@@ -1,0 +1,10 @@
+- hosts: localhost
+  gather_facts: no
+  vars:
+    provider: openstack
+
+  tasks:
+    - name: Setup image '{{ image }}'
+      import_role:
+        name: setup_image
+        defaults_from: "openstack.yml"

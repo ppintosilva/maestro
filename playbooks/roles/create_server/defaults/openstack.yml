@@ -1,0 +1,40 @@
+# ---
+#
+# OPENSTACK
+#
+# ---
+
+provider: openstack
+
+# Instance details
+
+server:
+image: "cloud-xenial64"
+flavor: "m1.medium"
+sec_groups: "default"
+keypair:
+volumes:
+
+# ---
+# Network details
+
+# If there is only one private_network, ansible attaches the instance to that without having to define it explicitly
+private_network:
+external_network: "public"
+
+# ---
+# User data
+
+username: "jsnow"
+pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub' | expanduser) }}"
+
+# ---
+# Timeouts
+
+wait_for_instance: yes
+timeout_instance_boot: 600
+
+timeout_before_floating_ip:
+
+wait_for_floating_ip: no
+timeout_add_floating_ip: 120

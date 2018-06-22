@@ -1,0 +1,27 @@
+---
+- name: Test that the image is uploaded correctly for a valid url
+  hosts: localhost
+  vars:
+    image: "_ansible_openstack_server_test_"
+    image_url: "https://cloud-images.ubuntu.com/precise/current/precise-server-cloudimg-amd64-disk1.img"
+    image_format: "qcow2"
+    cpu_arch: "x86_64"
+    distro: "ubuntu"
+    timeout_upload_image: 300
+  
+  # Using an end-of-life distro for testing purposes as it's less likely to already exist in glance
+  tasks:
+    - include_tasks: ../tasks/openstack.yml
+
+    - name: Check if named image exists
+      os_image_facts:
+        image: "{{ image }}"
+    
+    - debug:
+        msg: "Image uploaded successfully"
+      when: openstack_image
+    
+    - name: Remove test image
+      os_image:
+        name: "{{ image }}"
+        state: absent

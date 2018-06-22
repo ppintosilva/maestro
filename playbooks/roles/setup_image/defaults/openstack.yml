@@ -1,0 +1,15 @@
+# ---
+# Image details
+
+provider: openstack
+
+image: "cloud-xenial64"
+image_format: "qcow2"
+cpu_arch: "x86_64"
+distro: "ubuntu"
+image_url: "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
+
+# ---
+# Timeouts
+
+timeout_upload_image: 300

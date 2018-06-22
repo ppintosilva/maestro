@@ -1,0 +1,27 @@
+sql:
+  aaronpederson.mariadb:
+  bennojoy.mysql:
+  zzet.postgresql:
+  kyleabenson.mssql:
+
+neo4j:
+  julienroubieu.neo4j
+
+mongodb:
+  gheydon.mongodb
+
+cassandra:
+  andrewrothstein.cassandra
+
+spark:
+  andrewrothstein.spark
+
+r-server:
+  yutannihilation.module-cran:
+  debops.rstudio_server:
+
+ai-server:
+  andrewrothstein.anaconda:
+  kuza55.tensorflow:
+
+# ...

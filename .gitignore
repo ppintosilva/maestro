@@ -99,3 +99,28 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Vagrant - devstack
+Vagrantfile
+.vagrant/
+
+# Ansible
+*.retry
+
+# Openstack
+.openrc
+.pytest_cache/
+
+# Generated files
+playbooks/group/vars/*.yml
+playbooks/concerto.yml
+playbooks/intermezzo.yml
+playbooks/group/*.yml
+inventory/hosts
+group_vars/
+!group_vars/.gitkeep
+
+# User input files
+/instruments.yml
+/orchestra.yml
+/test.yml

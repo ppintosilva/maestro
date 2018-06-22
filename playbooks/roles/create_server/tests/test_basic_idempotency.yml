@@ -1,0 +1,41 @@
+---
+- name: Test instance boot and idempotency
+  hosts: localhost
+  gather_facts: no
+  
+  vars:
+    server: "_test_server_"
+    image: "cirros-0.3.5-x86_64-disk" #Or change to existing image
+    flavor: "m1.micro"
+    timeout_instance_boot: 60
+    timeout_add_floating_ip: 60
+    delete: true
+  
+  tasks:
+    - name: Retrieve list of existing server names
+      os_server_facts:
+
+    - debug:
+       var: openstack_servers | default([]) | json_query("[?name=='{{server}}'].accessIPv4")
+
+    - name: Create cirros test server
+      include_role:
+        name: ../../../create_server
+        defaults_from: openstack.yml
+
+    - name: Retrieve list of existing server names
+      os_server_facts:
+
+    - debug:
+       var: openstack_servers | default([]) | json_query("[?name=='{{server}}'].accessIPv4")
+
+    - name: Idempotency test - no changes should take place
+      include_role:
+        name: ../../../create_server
+        defaults_from: openstack.yml
+
+    - name: Delete created instance
+      os_server:
+        name: "{{ server }}"
+        state: absent
+      when: delete

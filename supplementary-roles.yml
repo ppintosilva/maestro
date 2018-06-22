@@ -1,0 +1,36 @@
+## Databases
+- src: aaronpederson.mariadb
+- src: bennojoy.mysql
+- src: zzet.postgresql
+- src: julienroubieu.neo4j
+- src: gheydon.mongodb
+- src: andrewrothstein.cassandra
+- src: kyleabenson.mssql
+
+## Webservers
+- src: debops.nginx
+- src: jpnewman.apache
+- src: Oefenweb.shiny-server
+- src: bennojoy.redis
+- src: bennojoy.memcached
+- src: debops.etc_services
+
+## Computing
+- src: andrewrothstein.spark
+- src: andrewrothstein.hadoop
+- src: andrewrothstein.anaconda
+- src: yutannihilation.module-cran
+- src: debops.rstudio_server
+- src: joshualund.golang
+- src: zzet.rbenv
+- src: kuza55.tensorflow
+- src: andrewrothstein.dotnet
+
+## Generic
+- src: mongrelion.docker
+- src: angstwad.docker_ubuntu
+- src: gantsign.kubernetes
+- src: bennojoy.ntp
+
+# For testing
+- src: webofmars.dummy

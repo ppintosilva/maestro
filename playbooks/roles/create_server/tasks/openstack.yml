@@ -1,0 +1,60 @@
+- name: Retrieve list of existing server names
+  os_server_facts:
+  when: openstack_servers is not defined
+
+- name: Boot new instance
+  os_server:
+    name: "{{ server }}"
+    image: "{{ image }}"
+    flavor: "{{ flavor }}"
+    state: present
+    auto_ip: no  # We do this in the following task
+    wait: "{{ wait_for_instance }}"
+    security_groups: "{{ sec_groups }}"
+    timeout: "{{ timeout_instance_boot }}"
+    config_drive: true
+    key_name: "{{ keypair }}"
+    volumes: "{{ volumes }}"
+    network: "{{ private_network }}"
+    userdata: |
+      #cloud-config
+      users:
+        - name: {{ username }}
+          sudo: ALL=(ALL) NOPASSWD:ALL
+          groups: users, admin
+          ssh-impot-id: None
+          lock_passwd: TRUE
+          ssh-authorized-keys: {{ pubkey }}
+
+      bootcmd:
+        - echo 127.0.0.1 {{ server }} >> /etc/hosts
+        - [ cloud-init-per, once]
+
+      packages:
+        - python-minimal
+        - ansible
+        - make
+
+      package_upgrade: true
+  when: server not in (openstack_servers | default([]) | map(attribute='name'))
+
+- name: Sleep before trying to add floating ip
+  wait_for:
+    timeout: "{{ timeout_before_floating_ip }}"
+  delegate_to: localhost
+  when: timeout_before_floating_ip != None and server not in (openstack_servers | default([]) | map(attribute='name'))
+
+- name: Set fact of server - floating ip
+  set_fact:
+    floatingIp: "{{ openstack_servers | default([]) | json_query(\"[?name=='\" + server + \"'].accessIPv4\") }}"
+
+- name: Add floating ip to instance - reuse floating ip or create new one
+  os_floating_ip:
+    state: present
+    reuse: yes
+    server: "{{ server }}"
+    network: "{{ external_network }}"
+    wait: "{{ wait_for_floating_ip }}"
+    timeout: "{{ timeout_add_floating_ip }}"
+  when: (floatingIp | length) == 0 or (floatingIp | first) == ""
+  ignore_errors: yes
