@@ -156,8 +156,7 @@ def gen_individual_playbook(group, username):
         playbook = [
         "- hosts: {}".format(group.name),
         "  gather_facts: yes",
-       	"  remote_user: {}".format(username),
-        "  become: yes",
+       	"  remote_user: {}".format(username),        
         "",
         "  tasks:",
         ""]
