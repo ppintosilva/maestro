@@ -25,6 +25,7 @@
 - src: zzet.rbenv
 - src: kuza55.tensorflow
 - src: andrewrothstein.dotnet
+- src: geerlingguy.java
 
 ## Generic
 - src: mongrelion.docker

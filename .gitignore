@@ -124,3 +124,10 @@ group_vars/
 /instruments.yml
 /orchestra.yml
 /test.yml
+
+.ipv4.json
+.openrc_noask
+
+playbooks/group/roles/*
+playbooks/group/roles/*
+!playbooks/group/roles/.gitkeep

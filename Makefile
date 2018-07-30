@@ -15,7 +15,7 @@ all:
 # Destroy all generated files - but not the servers
 .PHONY: clean
 clean:
-	@rm -rf playbooks/concerto.{yml,retry} playbooks/intermezzo.{yml,retry} && find playbooks/group/ -type f -not -name '.gitkeep' -print0 | xargs -0 -r rm -rf -- && find group_vars -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -r rm -rf -- && echo OK!
+	@rm -rf playbooks/concerto.{yml,retry} playbooks/intermezzo.{yml,retry} && rm -rf playbooks/group/*.{yml,retry} && find group_vars -mindepth 1 -maxdepth 1 -type d -print | xargs rm -rf && echo OK!
 
 ###
 ###
@@ -24,21 +24,21 @@ clean:
 # Install stuff
 .PHONY: virtualenv
 virtualenv:
-	$(info $(blue)Making new virtualenv at ./ENV]$(reset))
-	@python2 -m virtualenv ENV
+	$(info $(blue)Making new virtualenv at ./ENV$(reset))
+	@python2 -m pip install virtualenv && @python2 -m virtualenv ENV
 
 .PHONY: pipdependencies
 pipdependencies: requirements.txt
 	$(info $(blue)Installing pip requirements in virtualenv$(reset))
-	@pip install -r $<
+	@ENV/bin/pip install -r $<
 
 .PHONY: extraroles
 extraroles: supplementary-roles.yml
 	$(info $(blue)Installing supplementary ansible galaxy roles $(reset))
-	@ansible-galaxy install -r $<
+	@ENV/bin/ansible-galaxy install -r $<
 
 .PHONY: install
-install: virtualenv pipdependencies extraroles
+install: virtualenv pipdependencies
 	@echo OK!
 
 ###
@@ -48,17 +48,17 @@ install: virtualenv pipdependencies extraroles
 # Individual role sanity check
 .PHONY: tests
 tests: maestro/tests
-	@pytest $< -vv
+	@ENV/bin/pytest $< -vv
 
 # Create image with default values (ubuntu 16.04)
 .PHONY: image
 image: playbooks/setup-image.yml
-	@ansible-playbook -i inventory $<
+	@ENV/bin/ansible-playbook -i inventory $<
 
 # Create server with default values (4 GB RAM, ubuntu 16.04)
 .PHONY: server
 server: playbooks/create-server.yml
-	@ansible-playbook -i inventory $<
+	@ENV/bin/ansible-playbook -i inventory $<
 
 
 ###
@@ -68,20 +68,15 @@ server: playbooks/create-server.yml
 # Generate
 .PHONY: playbooks
 playbooks: maestro.py
-	python2.7 $< orchestra.yml instruments.yml --stage="openstack"
-
+	ENV/bin/python2.7 $< orchestra.yml instruments.yml --stage="openstack"
 
 # Creating the servers
 .PHONY: servers
 servers: playbooks/concerto.yml inventory/hosts
-	ansible-playbook -i inventory $<
+	ENV/bin/ansible-playbook -i inventory $<
 
 # Running the roles
 .PHONY: provision
 provision: playbooks/intermezzo.yml inventory/hosts
-	ansible-playbook -i inventory $<
+	ENV/bin/ansible-playbook -i inventory $<
 
-# All in a big pipe
-.PHONY: bigbang
-bigbang: playbooks concerto intermezzo
-	@echo OK!

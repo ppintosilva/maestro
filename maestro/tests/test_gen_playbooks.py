@@ -49,7 +49,6 @@ expected_sql_playbook = \
 """- hosts: sql
   gather_facts: yes
   remote_user: l337
-  become: yes
 
   tasks:
 
@@ -62,7 +61,6 @@ expected_mongo_playbook = \
 """- hosts: mongo
   gather_facts: yes
   remote_user: dummy
-  become: yes
 
   tasks:
 """
@@ -71,7 +69,6 @@ expected_computing_playbook = \
 """- hosts: computing
   gather_facts: yes
   remote_user: dummy
-  become: yes
 
   tasks:
 
